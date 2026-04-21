@@ -1,0 +1,22 @@
+<div style="padding: 24px; font-family: sans-serif; display: flex; flex-direction: column; gap: 16px;">
+
+  <h1 style="font-size: 32px; margin: 0;">{{ "now" | date: "%A, %B %d" }}</h1>
+
+  <div>
+    <p style="font-size: 18px; margin: 0;">Temperature</p>
+    <p style="font-size: 48px; margin: 0; font-weight: bold;">{{ source_1.current.temperature_2m }}°C</p>
+  </div>
+
+  <div>
+    <p style="font-size: 18px; margin: 0;">Random</p>
+    <p style="font-size: 48px; margin: 0; font-weight: bold;">{{ source_2[0] }}</p>
+  </div>
+
+  <div>
+    <p style="font-size: 18px; margin: 0; font-weight: bold;">Sheet Data</p>
+    {% for row in source_3.rows %}
+      <p style="margin: 4px 0;">{{ row["Head 1"] }}: {{ row["Head 2"] }}</p>
+    {% endfor %}
+  </div>
+
+</div>

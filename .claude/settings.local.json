@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(rb|json|yml\\)$\")",
+      "Bash(grep -E \"\\\\.rb$\")",
+      "Bash(grep -E \"\\\\.\\(rb|yml\\)$\")",
+      "Bash(xargs ls *)",
+      "Bash(xargs cat *)",
+      "Bash(docker exec terminus-database-1 *)",
+      "Bash(docker exec *)"
+    ]
+  }
+}

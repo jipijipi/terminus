@@ -1,22 +1,76 @@
-<div style="padding: 24px; font-family: sans-serif; display: flex; flex-direction: column; gap: 16px;">
+<div style="padding: 24px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px;">
 
-  <h1 style="font-size: 32px; margin: 0;">{{ "now" | date: "%A, %B %d" }}</h1>
-
-  <div>
-    <p style="font-size: 18px; margin: 0;">Temperature</p>
-    <p style="font-size: 48px; margin: 0; font-weight: bold;">{{ source_1.current.temperature_2m }}°C</p>
+  <!-- Zone 1: Date -->
+  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+    <p style="font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 2px;">
+      {{ "now" | date: "%A" }}
+    </p>
+    <p style="font-size: 40px; font-weight: bold; margin: 0; line-height: 1.1;">
+      {{ "now" | date: "%B %d" }}
+    </p>
   </div>
 
-  <div>
-    <p style="font-size: 18px; margin: 0;">Random</p>
-    <p style="font-size: 48px; margin: 0; font-weight: bold;">{{ source_2[0] }}</p>
+  <!-- Zone 3: Weather (source_1 = Open-Meteo) -->
+  {% assign temp = source_1.current.temperature_2m %}
+  {% assign code = source_1.current.weather_code %}
+  {% assign max_temp = source_1.daily.temperature_2m_max[0] %}
+  {% assign daily_code = source_1.daily.weather_code[0] %}
+
+  {% if code == 0 %}
+    {% assign condition = "Clear ☀" %}
+  {% elsif code == 1 or code == 2 or code == 3 %}
+    {% assign condition = "Cloudy ☁" %}
+  {% elsif code == 51 or code == 53 or code == 55 or code == 61 or code == 63 or code == 65 or code == 80 or code == 81 or code == 82 %}
+    {% assign condition = "Rain ☂" %}
+  {% elsif code == 71 or code == 73 or code == 75 or code == 77 %}
+    {% assign condition = "Snow ❄" %}
+  {% elsif code == 95 or code == 96 or code == 99 %}
+    {% assign condition = "Storm ⚡" %}
+  {% else %}
+    {% assign condition = "?" %}
+  {% endif %}
+
+  {% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
+    {% assign umbrella = true %}
+  {% else %}
+    {% assign umbrella = false %}
+  {% endif %}
+
+  {% if temp < 5 %}
+    {% assign clothing = "Heavy coat + scarf" %}
+  {% elsif temp < 12 %}
+    {% assign clothing = "Jacket" %}
+  {% elsif temp < 18 %}
+    {% assign clothing = "Light jacket" %}
+  {% else %}
+    {% assign clothing = "T-shirt" %}
+  {% endif %}
+  {% if umbrella %}{% assign clothing = clothing | append: " + Umbrella ☂" %}{% endif %}
+
+  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+    <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">Weather · Paris</p>
+    <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
+      {{ temp }}°C <span style="font-size: 20px; font-weight: normal;">{{ condition }}</span>
+    </p>
+    <p style="font-size: 14px; margin: 4px 0 0;">Max {{ max_temp }}°C &nbsp;·&nbsp; {{ clothing }}</p>
   </div>
 
-  <div>
-    <p style="font-size: 18px; margin: 0; font-weight: bold;">Sheet Data</p>
-    {% for row in source_3.rows %}
-      <p style="margin: 4px 0;">{{ row["Head 1"] }}: {{ row["Head 2"] }}</p>
+  <!-- Zone 4: Family (source_2 = n8n /webhook/family) -->
+  {% assign idx = "now" | date: "%S" | modulo: 2 %}
+  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+    <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">
+      Hello, {{ source_2.names[idx] }}!
+    </p>
+    {% for e in source_2.events %}
+      {% if e.label != "" %}
+        <p style="font-size: 14px; margin: 2px 0;">{{ e.icon }} <strong>{{ e.member }}</strong>: {{ e.label }}</p>
+      {% endif %}
     {% endfor %}
+  </div>
+
+  <!-- Zone 2: Status -->
+  <div style="font-size: 11px; color: #666;">
+    Updated {{ "now" | date: "%H:%M" }}
   </div>
 
 </div>

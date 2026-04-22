@@ -55,13 +55,13 @@
     <p style="font-size: 14px; margin: 4px 0 0;">Max {{ max_temp }}°C &nbsp;·&nbsp; {{ clothing }}</p>
   </div>
 
-  <!-- Zone 4: Family (source_2 = n8n /webhook/family) -->
+  <!-- Zone 4: Family (source_2 = n8n /webhook/dashboard → .family) -->
   {% assign idx = "now" | date: "%S" | modulo: 2 %}
   <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
     <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">
-      Hello, {{ source_2.names[idx] }}!
+      Hello, {{ source_2.family.names[idx] }}!
     </p>
-    {% for e in source_2.events %}
+    {% for e in source_2.family.events %}
       {% if e.label != "" %}
         <p style="font-size: 14px; margin: 2px 0;">{{ e.icon }} <strong>{{ e.member }}</strong>: {{ e.label }}</p>
       {% endif %}

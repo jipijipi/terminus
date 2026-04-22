@@ -7,7 +7,7 @@ Personal TRMNL dashboard with 4 zones: date, weather, family, status.
 - **Kind**: `poll`
 - **URIs** (order matters — they map to `source_1`, `source_2`):
   1. Open-Meteo weather (see below)
-  2. n8n family webhook: `http://<host>:5678/webhook/family`
+  2. n8n dashboard webhook: `http://<host>:5678/webhook/dashboard`
 
 ### Open-Meteo URI
 
@@ -37,22 +37,11 @@ WMO code mapping in template: 0=Clear ☀, 1-3=Cloudy ☁, rain codes=Rain ☂, 
 
 Clothing suggestion derived from current temp + umbrella flag from daily forecast.
 
-### Zone 4 — Family (`source_2`)
+### Zone 4 — Family (`source_2.family`)
 
-n8n workflow: Webhook node (GET, path: `family`) → Set node (JSON mode) → auto-respond.
+n8n single workflow (see `n8n_workflow.md`): Webhook node (GET, path: `dashboard`) → Set node (JSON mode) → auto-respond.
 
-**Set node JSON shape:**
-```json
-{
-  "names": ["Ulysse", "Mia"],
-  "events": [
-    { "member": "Ulysse", "icon": "~", "label": "Swimming 17h" },
-    { "member": "Mia", "icon": "x", "label": "Dinner out 20h" },
-    { "member": "Jean", "icon": "", "label": "" },
-    { "member": "JP", "icon": "", "label": "" }
-  ]
-}
-```
+All dynamic data lives under top-level keys in one JSON object. Family data is under the `family` key.
 
 - `names`: picked pseudo-randomly using seconds mod 2 at render time
 - Events with empty `label` are hidden

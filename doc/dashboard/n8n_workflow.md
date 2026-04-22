@@ -5,7 +5,7 @@ Single webhook that fetches weather and merges all dashboard data into one JSON 
 ## Nodes
 
 ```
-Webhook → HTTP Request (Open-Meteo) → Set (merge all data)
+Webhook → HTTP Request (Open-Meteo) → Code (merge all data)
 ```
 
 ### 1. Webhook node
@@ -21,29 +21,30 @@ Webhook → HTTP Request (Open-Meteo) → Set (merge all data)
   ```
 - Response format: `JSON`
 
-### 3. Set node (JSON mode)
+### 3. Code node
 
-Weather fields use **expression mode** (click `=` on each value to toggle).
-Family fields are plain values.
+Use a Code node (not Set) — Set node's expression mode cannot handle mixed static/dynamic JSON reliably.
 
-```json
-{
-  "weather": {
-    "temp": "{{ $('HTTP Request').item.json.current.temperature_2m }}",
-    "code": "{{ $('HTTP Request').item.json.current.weather_code }}",
-    "max_temp": "{{ $('HTTP Request').item.json.daily.temperature_2m_max[0] }}",
-    "daily_code": "{{ $('HTTP Request').item.json.daily.weather_code[0] }}"
+```js
+const weather = $('HTTP Request').item.json;
+
+return {
+  weather: {
+    temp: weather.current.temperature_2m,
+    code: weather.current.weather_code,
+    max_temp: weather.daily.temperature_2m_max[0],
+    daily_code: weather.daily.weather_code[0]
   },
-  "family": {
-    "names": ["Ulysse", "Mia"],
-    "events": [
-      { "member": "Ulysse", "icon": "", "label": "" },
-      { "member": "Mia", "icon": "", "label": "" },
-      { "member": "Jean", "icon": "", "label": "" },
-      { "member": "JP", "icon": "", "label": "" }
+  family: {
+    names: ["Ulysse", "Mia"],
+    events: [
+      { member: "Ulysse", icon: "", label: "" },
+      { member: "Mia", icon: "", label: "" },
+      { member: "Jean", icon: "", label: "" },
+      { member: "JP", icon: "", label: "" }
     ]
   }
-}
+};
 ```
 
 Fill in `label` for any member with an event today. Leave empty to hide the line.

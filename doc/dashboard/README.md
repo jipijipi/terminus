@@ -5,15 +5,10 @@ Personal TRMNL dashboard with 4 zones: date, weather, family, status.
 ## Extension Configuration
 
 - **Kind**: `poll`
-- **URIs** (order matters — they map to `source_1`, `source_2`):
-  1. Open-Meteo weather (see below)
-  2. n8n dashboard webhook: `http://<host>:5678/webhook/dashboard`
+- **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
+- Since there is only one URI, Terminus exposes data as `source` (not `source_1`, `source_2`)
 
-### Open-Meteo URI
-
-```
-https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weather_code&daily=temperature_2m_max,weather_code&timezone=Europe/Paris&forecast_days=1
-```
+All data — weather included — flows through n8n. See `n8n_workflow.md` for setup.
 
 ## Zones
 
@@ -21,40 +16,40 @@ https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current
 Pure Liquid. No data source. Displays day of week + date.
 
 ### Zone 2 — Status
-Displays last render time (`{{ "now" | date: "%H:%M" }}`). Battery and refresh rate are not exposed to Liquid templates without a code change to `app/aspects/extensions/contextualizer.rb`.
+Displays last render time (`{{ "now" | date: "%H:%M" }}`).
+Battery and refresh rate are not exposed to Liquid templates without a code change to `app/aspects/extensions/contextualizer.rb`.
 
-### Zone 3 — Weather (`source_1`)
-Open-Meteo JSON. No auth required, no redirects.
+### Zone 3 — Weather (`source.weather`)
+
+n8n fetches Open-Meteo on each webhook call and flattens the response.
 
 | Variable | Description |
 |---|---|
-| `source_1.current.temperature_2m` | Current temp (°C) |
-| `source_1.current.weather_code` | WMO code → label + symbol |
-| `source_1.daily.temperature_2m_max[0]` | Today's max temp |
-| `source_1.daily.weather_code[0]` | Daily worst condition |
+| `source.weather.temp` | Current temp (°C) |
+| `source.weather.code` | WMO code → mapped to label + symbol in template |
+| `source.weather.max_temp` | Today's max temp |
+| `source.weather.daily_code` | Daily worst condition code |
 
-WMO code mapping in template: 0=Clear ☀, 1-3=Cloudy ☁, rain codes=Rain ☂, snow codes=Snow ❄, storm codes=Storm ⚡.
-
+WMO code mapping: 0=Clear ☀, 1-3=Cloudy ☁, rain=Rain ☂, snow=Snow ❄, storm=Storm ⚡.
 Clothing suggestion derived from current temp + umbrella flag from daily forecast.
 
-### Zone 4 — Family (`source_2.family`)
+### Zone 4 — Family (`source.family`)
 
-n8n single workflow (see `n8n_workflow.md`): Webhook node (GET, path: `dashboard`) → Set node (JSON mode) → auto-respond.
+Edited directly in the n8n Set node. No external service needed.
 
-All dynamic data lives under top-level keys in one JSON object. Family data is under the `family` key.
-
-- `names`: picked pseudo-randomly using seconds mod 2 at render time
-- Events with empty `label` are hidden
-- Update events directly in the n8n Set node
+| Variable | Description |
+|---|---|
+| `source.family.names[idx]` | Random name (seconds mod 2 at render time) |
+| `source.family.events` | Array of `{ member, icon, label }` — empty label = hidden |
 
 ## Files
 
-- `template.html` — full Liquid template (all zones)
+- `template.html` — full Liquid template (paste into Terminus extension)
+- `n8n_workflow.md` — n8n workflow setup instructions
 - `README.md` — this file
 
 ## Notes
 
-- Terminus HTTP client does not follow redirects — use direct JSON APIs or n8n webhooks only
+- Terminus HTTP client does not follow redirects — use n8n as a proxy for any service that redirects
 - Single-screen playlist bug: use 2+ screens in playlist (`app/repositories/playlist_item.rb:32`)
-- `text/plain` responses are split into array — not used in v1
-- Fly.io migration: update `WEBHOOK_URL` in n8n and extension URIs to public URLs
+- Fly.io migration: update extension URI to public n8n URL, update `WEBHOOK_URL` in n8n env

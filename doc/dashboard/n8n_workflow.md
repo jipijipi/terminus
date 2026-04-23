@@ -117,9 +117,7 @@ const family = [
   { member: "Papa",   icons: memberIcons('Papa Calendar') },
 ];
 
-const names = family.map(m => m.member);
-
-return { weather, family, names };
+return { weather, family, names: ["Ulysse", "Mia"] };
 ```
 
 `icons: []` means no events today → Liquid renders `—` placeholder.

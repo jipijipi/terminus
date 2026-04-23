@@ -39,7 +39,13 @@
 {% endif %}
 {% if umbrella %}{% assign clothing = clothing | append: " + Umbrella ☂" %}{% endif %}
 
-{% assign idx = "now" | date: "%S" | modulo: 2 %}
+{% assign sec = "now" | date: "%S" | plus: 0 %}
+{% assign idx = sec | modulo: 2 %}
+{% if idx == 0 %}
+  {% assign hello_name = "Ulysse" %}
+{% else %}
+  {% assign hello_name = "Mia" %}
+{% endif %}
 
 <!-- OUTER GRID — edit grid-template-areas to reorder zones -->
 <div style="
@@ -81,7 +87,7 @@
   <!-- Zone: family -->
   <div style="grid-area: family; background: #fff; padding: 20px 24px;">
     <p style="font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 2px;">
-      Hello, {{ source.family.names[idx] }}!
+      Hello, {{ hello_name }}!
     </p>
     {% for m in source.family %}
       <p style="font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px;">

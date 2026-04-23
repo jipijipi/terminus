@@ -50,9 +50,14 @@
   <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
     <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">Weather · Paris</p>
     <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
-      {{ temp }}°C <span style="font-size: 20px; font-weight: normal;">{{ condition }}</span>
+      {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
+      <span style="font-size: 20px; font-weight: normal;">{% if code %}{{ condition }}{% else %}?{% endif %}</span>
     </p>
-    <p style="font-size: 14px; margin: 4px 0 0;">Max {{ max_temp }}°C &nbsp;·&nbsp; {{ clothing }}</p>
+    <p style="font-size: 14px; margin: 4px 0 0;">
+      Max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}
+      &nbsp;·&nbsp;
+      {% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
+    </p>
   </div>
 
   <!-- Zone 4: Family (source.family) -->

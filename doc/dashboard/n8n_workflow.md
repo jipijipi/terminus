@@ -108,6 +108,44 @@ return {
 
 For external data: add another HTTP Request node, connect it into the Merge node, reference it in Dashboard Code with `$('My Node').item.json`.
 
+## Error Handling
+
+Two failure modes can occur on the Weather Request node:
+
+1. **Bad/error API response** — Open-Meteo returns `{"error":true,"reason":"..."}` (no `current` key) → accessing `weather.current` crashes Dashboard Code
+2. **Network failure** — the node itself errors → without "Continue on error", n8n halts the whole workflow
+
+### n8n: Weather Request node
+Enable **"Continue on error"** (node Settings tab) so network failures pass an error object downstream instead of halting the workflow.
+
+### Dashboard Code node
+Use a defensive check before accessing weather fields:
+
+```js
+const weatherRaw = $('Weather Request').item.json;
+
+const weather = (weatherRaw.error || !weatherRaw.current) ? {
+  temp: null, code: null, max_temp: null, daily_code: null
+} : {
+  temp: weatherRaw.current.temperature_2m,
+  code: weatherRaw.current.weather_code,
+  max_temp: weatherRaw.daily.temperature_2m_max[0],
+  daily_code: weatherRaw.daily.weather_code[0]
+};
+```
+
+`weatherRaw.error` catches both Open-Meteo error responses (`{"error":true}`) and n8n network error objects (`{"error":"..."}`). `!weatherRaw.current` is a fallback for any other unexpected shape.
+
+### Liquid template
+Null-guard each weather value — Liquid treats `null` as falsy:
+
+```liquid
+{% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
+{% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
+```
+
+When weather is unavailable, the screen shows `--°C · Weather unavailable` instead of crashing.
+
 ## Migration to Fly.io
 
 - Update the extension URI in Terminus to the public n8n Fly URL

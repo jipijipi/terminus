@@ -1,0 +1,7 @@
+- point system
+- dark mode
+- day display : breakie - school - teeth - bed
+- invader
+- quiz
+- blague
+- fly.io

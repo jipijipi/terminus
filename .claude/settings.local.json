@@ -7,7 +7,8 @@
       "Bash(xargs ls *)",
       "Bash(xargs cat *)",
       "Bash(docker exec terminus-database-1 *)",
-      "Bash(docker exec *)"
+      "Bash(docker exec *)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

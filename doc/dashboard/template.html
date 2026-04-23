@@ -63,7 +63,9 @@
     </p>
     {% for e in source.family.events %}
       {% if e.label != "" %}
-        <p style="font-size: 14px; margin: 2px 0;">{{ e.icon }} <strong>{{ e.member }}</strong>: {{ e.label }}</p>
+        <p style="font-size: 14px; margin: 2px 0; display: flex; align-items: center; gap: 6px;">
+          {{ e.icon }}<span><strong>{{ e.member }}</strong>: {{ e.label }}</span>
+        </p>
       {% endif %}
     {% endfor %}
   </div>

@@ -1,7 +1,59 @@
-<div style="padding: 24px; font-family: sans-serif; display: flex; flex-direction: column; gap: 20px;">
+{% comment %}
+  LAYOUT: change grid-template-areas to reorder zones. Available zones: date, weather, family, status.
+  DIVIDERS: controlled by gap + black background on the outer grid. Per-zone borders use border-bottom.
+{% endcomment %}
 
-  <!-- Zone 1: Date -->
-  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+{% assign temp = source.weather.temp %}
+{% assign code = source.weather.code %}
+{% assign max_temp = source.weather.max_temp %}
+{% assign daily_code = source.weather.daily_code %}
+
+{% if code == 0 %}
+  {% assign condition = "Clear ☀" %}
+{% elsif code == 1 or code == 2 or code == 3 %}
+  {% assign condition = "Cloudy ☁" %}
+{% elsif code == 51 or code == 53 or code == 55 or code == 61 or code == 63 or code == 65 or code == 80 or code == 81 or code == 82 %}
+  {% assign condition = "Rain ☂" %}
+{% elsif code == 71 or code == 73 or code == 75 or code == 77 %}
+  {% assign condition = "Snow ❄" %}
+{% elsif code == 95 or code == 96 or code == 99 %}
+  {% assign condition = "Storm ⚡" %}
+{% else %}
+  {% assign condition = "?" %}
+{% endif %}
+
+{% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
+  {% assign umbrella = true %}
+{% else %}
+  {% assign umbrella = false %}
+{% endif %}
+
+{% if temp < 5 %}
+  {% assign clothing = "Heavy coat + scarf" %}
+{% elsif temp < 12 %}
+  {% assign clothing = "Jacket" %}
+{% elsif temp < 18 %}
+  {% assign clothing = "Light jacket" %}
+{% else %}
+  {% assign clothing = "T-shirt" %}
+{% endif %}
+{% if umbrella %}{% assign clothing = clothing | append: " + Umbrella ☂" %}{% endif %}
+
+{% assign idx = "now" | date: "%S" | modulo: 2 %}
+
+<!-- OUTER GRID — edit grid-template-areas to reorder zones -->
+<div style="
+  font-family: sans-serif;
+  display: grid;
+  grid-template-areas: 'date' 'weather' 'family' 'status';
+  gap: 1px;
+  background: #000;
+  height: 100vh;
+  box-sizing: border-box;
+">
+
+  <!-- Zone: date -->
+  <div style="grid-area: date; background: #fff; padding: 20px 24px;">
     <p style="font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 2px;">
       {{ "now" | date: "%A" }}
     </p>
@@ -10,59 +62,24 @@
     </p>
   </div>
 
-  <!-- Zone 3: Weather (source.weather) -->
-  {% assign temp = source.weather.temp %}
-  {% assign code = source.weather.code %}
-  {% assign max_temp = source.weather.max_temp %}
-  {% assign daily_code = source.weather.daily_code %}
-
-  {% if code == 0 %}
-    {% assign condition = "Clear ☀" %}
-  {% elsif code == 1 or code == 2 or code == 3 %}
-    {% assign condition = "Cloudy ☁" %}
-  {% elsif code == 51 or code == 53 or code == 55 or code == 61 or code == 63 or code == 65 or code == 80 or code == 81 or code == 82 %}
-    {% assign condition = "Rain ☂" %}
-  {% elsif code == 71 or code == 73 or code == 75 or code == 77 %}
-    {% assign condition = "Snow ❄" %}
-  {% elsif code == 95 or code == 96 or code == 99 %}
-    {% assign condition = "Storm ⚡" %}
-  {% else %}
-    {% assign condition = "?" %}
-  {% endif %}
-
-  {% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
-    {% assign umbrella = true %}
-  {% else %}
-    {% assign umbrella = false %}
-  {% endif %}
-
-  {% if temp < 5 %}
-    {% assign clothing = "Heavy coat + scarf" %}
-  {% elsif temp < 12 %}
-    {% assign clothing = "Jacket" %}
-  {% elsif temp < 18 %}
-    {% assign clothing = "Light jacket" %}
-  {% else %}
-    {% assign clothing = "T-shirt" %}
-  {% endif %}
-  {% if umbrella %}{% assign clothing = clothing | append: " + Umbrella ☂" %}{% endif %}
-
-  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+  <!-- Zone: weather -->
+  <div style="grid-area: weather; background: #fff; padding: 20px 24px;">
     <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">Weather · Paris</p>
-    <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
-      {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
-      <span style="font-size: 20px; font-weight: normal;">{% if code %}{{ condition }}{% else %}?{% endif %}</span>
-    </p>
-    <p style="font-size: 14px; margin: 4px 0 0;">
-      Max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}
-      &nbsp;·&nbsp;
-      {% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
-    </p>
+    <!-- weather sub-grid: temp+condition left, detail right -->
+    <div style="display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px;">
+      <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
+        {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
+        <span style="font-size: 20px; font-weight: normal;">{% if code %}{{ condition }}{% else %}?{% endif %}</span>
+      </p>
+      <p style="font-size: 14px; margin: 0; text-align: right;">
+        Max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}<br>
+        {% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
+      </p>
+    </div>
   </div>
 
-  <!-- Zone 4: Family (source.family) -->
-  {% assign idx = "now" | date: "%S" | modulo: 2 %}
-  <div style="border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+  <!-- Zone: family -->
+  <div style="grid-area: family; background: #fff; padding: 20px 24px;">
     <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">
       Hello, {{ source.family.names[idx] }}!
     </p>
@@ -75,9 +92,9 @@
     {% endfor %}
   </div>
 
-  <!-- Zone 2: Status -->
-  <div style="font-size: 11px; color: #666;">
-    Updated {{ "now" | date: "%H:%M" }}
+  <!-- Zone: status -->
+  <div style="grid-area: status; background: #fff; padding: 8px 24px;">
+    <p style="font-size: 11px; margin: 0; color: #666;">Updated {{ "now" | date: "%H:%M" }}</p>
   </div>
 
 </div>

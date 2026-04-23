@@ -1,3 +1,5 @@
+- calendar
+- french
 - point system
 - dark mode
 - day display : breakie - school - teeth - bed
@@ -5,3 +7,29 @@
 - quiz
 - blague
 - fly.io
+
+ICONS
+weather
+    - sun
+    - rain
+    - cloud
+    - moon
+    - storm
+    - snow
+clothing
+    head
+    - bonnet
+    - casquette
+    top
+    - tshirt
+    - coat
+    bottom
+    - pantalon
+    - short
+    feet
+    - bottes
+    - sandales
+    - baskets
+events
+
+    https://www.googleapis.com/calendar/v3/calendars/8cbd1e78dbf8ad03642219ff46d15e045d994054fc6cd3e152c17031d6e3d3c6@group.calendar.google.com/events?key=fAIzaSyCLtQa6sbPv0P_k_WLekZvItrv-pKks_Uo&timeMin=2026-04-23T00:00:00Z&timeMax=2026-04-24T00:00:00Z&singleEvents=true

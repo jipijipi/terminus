@@ -80,15 +80,20 @@
 
   <!-- Zone: family -->
   <div style="grid-area: family; background: #fff; padding: 20px 24px;">
-    <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">
+    <p style="font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 2px;">
       Hello, {{ source.family.names[idx] }}!
     </p>
-    {% for e in source.family.events %}
-      {% if e.label != "" %}
-        <p style="font-size: 14px; margin: 2px 0; display: flex; align-items: center; gap: 6px;">
-          {{ e.icon }}<span><strong>{{ e.member }}</strong>: {{ e.label }}</span>
-        </p>
-      {% endif %}
+    {% for m in source.family %}
+      <p style="font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px;">
+        <strong style="min-width: 56px;">{{ m.member }}</strong>
+        <span style="display: flex; align-items: center; gap: 4px;">
+          {% if m.icons.size > 0 %}
+            {% for icon in m.icons %}{{ icon }}{% endfor %}
+          {% else %}
+            <span style="opacity: 0.3; font-size: 16px;">—</span>
+          {% endif %}
+        </span>
+      </p>
     {% endfor %}
   </div>
 

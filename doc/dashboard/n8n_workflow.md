@@ -1,13 +1,16 @@
 # n8n Dashboard Workflow
 
-Single webhook that fetches weather and merges all dashboard data into one JSON response.
+Single webhook that fetches weather + Google Calendar events, merges all data into one JSON response.
 
 ## Node Graph
 
 ```
-Webhook → Icon Library ───────────────┐
-                                       ├──► Merge ──► Dashboard Code
-Webhook → Weather Request (HTTP) ─────┘
+Webhook → Date Prep ──► Ulysse Calendar ──┐
+                    └──► Mia Calendar ─────┤
+                    └──► Maman Calendar ───┤
+                    └──► Papa Calendar ────┤
+Webhook → Icon Library ────────────────────┤
+Webhook → Weather Request ─────────────────┴──► Merge ──► Dashboard Code
 ```
 
 ### 1. Webhook node
@@ -15,9 +18,26 @@ Webhook → Weather Request (HTTP) ─────┘
 - Path: `dashboard`
 - Response mode: `When last node finishes`
 
-### 2. Icon Library node (Code)
+### 2. Date Prep node (Code)
+
+Computes `timeMin`/`timeMax` for today in UTC. Referenced by all 4 Calendar HTTP Request nodes.
+
+```js
+const now = new Date();
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const tomorrow = new Date(now);
+tomorrow.setDate(tomorrow.getDate() + 1);
+return {
+  timeMin: `${ymd(now)}T00:00:00Z`,
+  timeMax: `${ymd(tomorrow)}T00:00:00Z`
+};
+```
+
+### 3. Icon Library node (Code)
 
 No inputs. Returns a flat map of `{ name: svgString }`. Add icons here as the set grows.
+Event titles in Google Calendar must match these keys exactly.
 
 ```js
 return {
@@ -32,7 +52,24 @@ return {
 };
 ```
 
-### 3. Weather Request node (HTTP Request)
+### 4. Calendar HTTP Request nodes (×4)
+
+One node per family member. Enable **"Continue on error"** on each (Settings tab).
+
+- Method: `GET`
+- URL (expression mode):
+  ```
+  https://www.googleapis.com/calendar/v3/calendars/CALENDAR_ID/events?key=API_KEY&timeMin={{ $('Date Prep').item.json.timeMin }}&timeMax={{ $('Date Prep').item.json.timeMax }}&singleEvents=true&orderBy=startTime
+  ```
+- Replace `CALENDAR_ID` and `API_KEY` with real values per node
+- Node names: `Ulysse Calendar`, `Mia Calendar`, `Maman Calendar`, `Papa Calendar`
+
+Calendar IDs are found in Google Calendar → Settings → "Integrate calendar".
+
+### 5. Weather Request node (HTTP Request)
+
+Enable **"Continue on error"** (Settings tab).
+
 - Method: `GET`
 - URL:
   ```
@@ -40,47 +77,68 @@ return {
   ```
 - Response format: `JSON`
 
-### 4. Merge node
+### 6. Merge node
 - Mode: `Combine` → `Combine by position`
-- Inputs: Icon Library + Weather Request
-- Ensures both branches have executed before Dashboard Code runs
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request (6 total)
+- Ensures all branches have executed before Dashboard Code runs
 
-### 5. Dashboard Code node (Code)
+### 7. Dashboard Code node (Code)
 
-References the original nodes by name (not Merge). Use your exact node names.
+References all original nodes by name (not Merge).
 
 ```js
 const icons = $('Icon Library').item.json;
-const weather = $('Weather Request').item.json;
 
-return {
-  weather: {
-    temp: weather.current.temperature_2m,
-    code: weather.current.weather_code,
-    max_temp: weather.daily.temperature_2m_max[0],
-    daily_code: weather.daily.weather_code[0]
-  },
-  family: {
-    names: ["Ulysse", "Mia"],
-    events: [
-      { member: "Ulysse", icon: icons.swimming, label: "" },
-      { member: "Mia",    icon: icons.dinner,   label: "" },
-      { member: "Maman",  icon: "",              label: "" },
-      { member: "Papa",   icon: "",              label: "" }
-    ]
-  }
+// Weather — defensive against API errors and network failures
+const weatherRaw = $('Weather Request').item.json;
+const weather = (weatherRaw.error || !weatherRaw.current) ? {
+  temp: null, code: null, max_temp: null, daily_code: null
+} : {
+  temp: weatherRaw.current.temperature_2m,
+  code: weatherRaw.current.weather_code,
+  max_temp: weatherRaw.daily.temperature_2m_max[0],
+  daily_code: weatherRaw.daily.weather_code[0]
 };
+
+// Calendar — extract today's all-day event icons per member
+function memberIcons(nodeName) {
+  const raw = $(nodeName).item.json;
+  if (raw.error || !raw.items) return [];
+  return raw.items
+    .filter(e => e.start && e.start.date && !e.start.dateTime)
+    .map(e => icons[e.summary] || "")
+    .filter(Boolean);
+}
+
+const family = [
+  { member: "Ulysse", icons: memberIcons('Ulysse Calendar') },
+  { member: "Mia",    icons: memberIcons('Mia Calendar') },
+  { member: "Maman",  icons: memberIcons('Maman Calendar') },
+  { member: "Papa",   icons: memberIcons('Papa Calendar') },
+];
+
+const names = family.map(m => m.member);
+
+return { weather, family, names };
 ```
 
-To add an icon: add an entry to Icon Library, reference with `icons.key` in an event.
-To use no icon: set `icon: ""`.
-Events with empty `label` are hidden by the Liquid template.
+`icons: []` means no events today → Liquid renders `—` placeholder.
+Unknown calendar event titles (no matching icon key) are filtered out silently.
 
-## Terminus Extension
+## JSON shape exposed to Terminus
 
-- **Kind**: `poll`
-- **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
-- Single URI → data exposed as `source` (not `source_1`)
+```json
+{
+  "weather": { "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2 },
+  "family": [
+    { "member": "Ulysse", "icons": ["<svg...>", "<svg...>"] },
+    { "member": "Mia",    "icons": [] },
+    { "member": "Maman",  "icons": ["<svg...>"] },
+    { "member": "Papa",   "icons": [] }
+  ],
+  "names": ["Ulysse", "Mia", "Maman", "Papa"]
+}
+```
 
 ## Template Variables
 
@@ -90,61 +148,29 @@ Events with empty `label` are hidden by the Liquid template.
 | Weather code | `{{ source.weather.code }}` |
 | Max temp today | `{{ source.weather.max_temp }}` |
 | Daily weather code | `{{ source.weather.daily_code }}` |
-| Family name (random) | `{{ source.family.names[idx] }}` |
-| Family events | `{% for e in source.family.events %}` |
-
-## Adding More Data Later
-
-Add new top-level keys in Dashboard Code — no URI or extension changes needed:
-
-```js
-return {
-  weather: { ... },
-  family: { ... },
-  chores: { ... },   // new
-  agenda: { ... }    // new
-};
-```
-
-For external data: add another HTTP Request node, connect it into the Merge node, reference it in Dashboard Code with `$('My Node').item.json`.
+| Random name | `{{ source.names[idx] }}` |
+| Family rows | `{% for m in source.family %}` |
+| Member name | `{{ m.member }}` |
+| Member icons | `{% for icon in m.icons %}{{ icon }}{% endfor %}` |
 
 ## Error Handling
 
-Two failure modes can occur on the Weather Request node:
+All external HTTP nodes have **"Continue on error"** enabled. Dashboard Code checks for error shapes before accessing properties:
 
-1. **Bad/error API response** — Open-Meteo returns `{"error":true,"reason":"..."}` (no `current` key) → accessing `weather.current` crashes Dashboard Code
-2. **Network failure** — the node itself errors → without "Continue on error", n8n halts the whole workflow
+- Weather: `weatherRaw.error || !weatherRaw.current` → returns null fields → Liquid shows `--°C`
+- Calendar: `raw.error || !raw.items` → returns `[]` → Liquid shows `—` placeholder
 
-### n8n: Weather Request node
-Enable **"Continue on error"** (node Settings tab) so network failures pass an error object downstream instead of halting the workflow.
+## Adding More Icons
 
-### Dashboard Code node
-Use a defensive check before accessing weather fields:
+1. Add entry to Icon Library node: `roller: '<svg...>'`
+2. Create Google Calendar all-day event titled `roller`
+3. No other changes needed
 
-```js
-const weatherRaw = $('Weather Request').item.json;
+## Terminus Extension
 
-const weather = (weatherRaw.error || !weatherRaw.current) ? {
-  temp: null, code: null, max_temp: null, daily_code: null
-} : {
-  temp: weatherRaw.current.temperature_2m,
-  code: weatherRaw.current.weather_code,
-  max_temp: weatherRaw.daily.temperature_2m_max[0],
-  daily_code: weatherRaw.daily.weather_code[0]
-};
-```
-
-`weatherRaw.error` catches both Open-Meteo error responses (`{"error":true}`) and n8n network error objects (`{"error":"..."}`). `!weatherRaw.current` is a fallback for any other unexpected shape.
-
-### Liquid template
-Null-guard each weather value — Liquid treats `null` as falsy:
-
-```liquid
-{% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
-{% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
-```
-
-When weather is unavailable, the screen shows `--°C · Weather unavailable` instead of crashing.
+- **Kind**: `poll`
+- **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
+- Single URI → data exposed as `source` (not `source_1`)
 
 ## Migration to Fly.io
 

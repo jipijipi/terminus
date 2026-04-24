@@ -51,7 +51,7 @@
 <div style="
   font-family: sans-serif;
   display: grid;
-  grid-template-areas: 'date' 'weather' 'family' 'status';
+  grid-template-areas: 'date' 'weather' 'family' 'bons-points' 'status';
   gap: 1px;
   background: #000;
   height: 100vh;
@@ -101,6 +101,22 @@
         </span>
       </p>
     {% endfor %}
+  </div>
+
+  <!-- Zone: bons-points -->
+  <div style="grid-area: bons-points; background: #fff; padding: 12px 24px;">
+    <p style="font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 2px;">Bons Points cette semaine</p>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <p style="font-size: 40px; font-weight: bold; margin: 0; line-height: 1;">
+        {{ source.bonusPoints }}
+      </p>
+      <div style="flex: 1; background: #eee; height: 12px; border-radius: 6px; overflow: hidden;">
+        {% assign pct = source.bonusPoints | times: 10 %}
+        {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
+        <div style="width: {{ pct }}%; height: 100%; background: #000;"></div>
+      </div>
+      <p style="font-size: 13px; margin: 0; white-space: nowrap;">/ 10</p>
+    </div>
   </div>
 
   <!-- Zone: status -->

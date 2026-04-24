@@ -10,7 +10,8 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
                     └──► Maman Calendar ───┤
                     └──► Papa Calendar ────┤
 Webhook → Icon Library ────────────────────┤
-Webhook → Weather Request ─────────────────┴──► Merge ──► Dashboard Code
+Webhook → Weather Request ─────────────────┤
+Webhook → Upstash GET ─────────────────────┴──► Merge ──► Dashboard Code
 ```
 
 ### 1. Webhook node
@@ -77,12 +78,23 @@ Enable **"Continue on error"** (Settings tab).
   ```
 - Response format: `JSON`
 
-### 6. Merge node
+### 6. Upstash GET node (HTTP Request)
+
+Enable **"Continue on error"** (Settings tab).
+
+- Method: `GET`
+- URL: `https://YOUR_UPSTASH_HOST/get/bonusPoints`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Response format: `JSON`
+
+Upstash REST API returns `{ "result": "4" }` — the value is a string, coerced to int in Dashboard Code.
+
+### 7. Merge node
 - Mode: `Combine` → `Combine by position`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request (6 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (7 total)
 - Ensures all branches have executed before Dashboard Code runs
 
-### 7. Dashboard Code node (Code)
+### 8. Dashboard Code node (Code)
 
 References all original nodes by name (not Merge).
 
@@ -117,7 +129,11 @@ const family = [
   { member: "Papa",   icons: memberIcons('Papa Calendar') },
 ];
 
-return { weather, family, names: ["Ulysse", "Mia"] };
+// Bons Points — read from Upstash GET node
+const upstashRaw = $('Upstash GET').item.json;
+const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
+
+return { weather, family, bonusPoints };
 ```
 
 `icons: []` means no events today → Liquid renders `—` placeholder.
@@ -134,7 +150,7 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
     { "member": "Maman",  "icons": ["<svg...>"] },
     { "member": "Papa",   "icons": [] }
   ],
-  "names": ["Ulysse", "Mia", "Maman", "Papa"]
+  "bonusPoints": 4
 }
 ```
 
@@ -150,6 +166,7 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 | Family rows | `{% for m in source.family %}` |
 | Member name | `{{ m.member }}` |
 | Member icons | `{% for icon in m.icons %}{{ icon }}{% endfor %}` |
+| Bons Points count | `{{ source.bonusPoints }}` |
 
 ## Error Handling
 
@@ -170,7 +187,75 @@ All external HTTP nodes have **"Continue on error"** enabled. Dashboard Code che
 - **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
 - Single URI → data exposed as `source` (not `source_1`)
 
+## Bons Points Counter
+
+Two separate n8n workflows, independent of the dashboard workflow. Counter state lives in **Upstash Redis** — a managed Redis service with a free tier (10k req/day, no credit card). Persists across n8n restarts and Fly.io redeploys.
+
+**Upstash setup (one-time):**
+1. Create a free database at console.upstash.com
+2. Copy the REST URL and REST Token from the database dashboard
+3. Store both in n8n as a credential (or hardcode in HTTP Request headers — credential is cleaner)
+
+### Workflow: Counter Up
+
+```
+Webhook (GET /webhook/counter-up?delta=1)
+  → Upstash INCRBY (HTTP Request)
+  → Upstash GET (HTTP Request)
+  → Respond to Webhook
+```
+
+- **Webhook**: GET, path `counter-up`, response mode `Using Respond to Webhook node`
+
+- **Upstash INCRBY** (HTTP Request, "Continue on error"):
+  - Method: `POST`
+  - URL: `https://YOUR_UPSTASH_HOST/incrby/bonusPoints/{{ $json.query.delta ?? 1 }}`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+  - Note: `INCRBY` with a negative delta subtracts. Upstash returns `{ "result": 5 }`
+
+- **Upstash GET** (HTTP Request):
+  - Method: `GET`
+  - URL: `https://YOUR_UPSTASH_HOST/get/bonusPoints`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+  - Used to get the confirmed value after increment for the response
+
+- **Respond to Webhook**:
+  - Body: `Bons Points: {{ $json.result }} ({{ parseInt($('Webhook').item.json.query.delta ?? 1) >= 0 ? '+' : '' }}{{ $('Webhook').item.json.query.delta ?? 1 }})`
+  - MIME type: `text/plain`
+
+**Phone bookmark:** `https://YOUR_N8N_HOST/webhook/counter-up?delta=1`
+
+`delta` query param (integer, default 1 if omitted):
+- `?delta=1` → +1 (normal tap)
+- `?delta=3` → +3 at once
+- `?delta=-1` → subtract one (correction)
+
+### Workflow: Weekly Reset
+
+```
+Schedule Trigger (Monday 00:00, Europe/Paris) → Upstash SET (HTTP Request)
+```
+
+- **Schedule**: Every week, Monday, 00:00, timezone `Europe/Paris`
+- **Upstash SET** (HTTP Request):
+  - Method: `POST`
+  - URL: `https://YOUR_UPSTASH_HOST/set/bonusPoints/0`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+
+## Infrastructure & Free Tier Summary
+
+| Service | Purpose | Free tier |
+|---|---|---|
+| Open-Meteo | Weather API | Unlimited, no key needed |
+| Google Calendar API | Family events | Free (key-only, public calendars) |
+| Upstash Redis | Bons Points counter | 10k req/day, 256MB |
+| n8n (self-hosted) | Orchestration | Free (self-hosted on Fly.io) |
+| Fly.io | Hosting (Terminus + n8n) | Free allowance covers both small apps |
+
 ## Migration to Fly.io
 
-- Update the extension URI in Terminus to the public n8n Fly URL
-- Update `WEBHOOK_URL` in n8n's environment to its own public Fly URL
+- Deploy n8n as a separate Fly app with a persistent volume
+- Update `WEBHOOK_URL` in n8n's environment to its own public Fly URL (e.g. `https://my-n8n.fly.dev`)
+- Update the Terminus extension URI to the public n8n URL
+- Upstash credentials stay the same — the REST API is external, no changes needed
+- No counter migration needed: Upstash data is already cloud-hosted

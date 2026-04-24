@@ -119,11 +119,12 @@ const WMO_LABEL = {
 
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').item.json;
-const weather = (weatherRaw.error || !weatherRaw.current) ? {
-  temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null
-} : (() => {
+let weather;
+if (weatherRaw.error || !weatherRaw.current) {
+  weather = { temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null };
+} else {
   const code = weatherRaw.current.weather_code;
-  return {
+  weather = {
     temp:       weatherRaw.current.temperature_2m,
     code,
     max_temp:   weatherRaw.daily.temperature_2m_max[0],
@@ -131,7 +132,7 @@ const weather = (weatherRaw.error || !weatherRaw.current) ? {
     icon:       icons[WMO_ICON[code]] || null,
     condition:  WMO_LABEL[code] || 'Weather',
   };
-})();
+}
 
 // Calendar — extract today's all-day event icons per member
 function memberIcons(nodeName) {

@@ -8,20 +8,6 @@
 {% assign max_temp = source.weather.max_temp %}
 {% assign daily_code = source.weather.daily_code %}
 
-{% if code == 0 %}
-  {% assign condition = "Clear ☀" %}
-{% elsif code == 1 or code == 2 or code == 3 %}
-  {% assign condition = "Cloudy ☁" %}
-{% elsif code == 51 or code == 53 or code == 55 or code == 61 or code == 63 or code == 65 or code == 80 or code == 81 or code == 82 %}
-  {% assign condition = "Rain ☂" %}
-{% elsif code == 71 or code == 73 or code == 75 or code == 77 %}
-  {% assign condition = "Snow ❄" %}
-{% elsif code == 95 or code == 96 or code == 99 %}
-  {% assign condition = "Storm ⚡" %}
-{% else %}
-  {% assign condition = "?" %}
-{% endif %}
-
 {% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
   {% assign umbrella = true %}
 {% else %}
@@ -75,7 +61,10 @@
     <div style="display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px;">
       <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
         {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
-        <span style="font-size: 20px; font-weight: normal;">{% if code %}{{ condition }}{% else %}?{% endif %}</span>
+        <span style="font-size: 20px; font-weight: normal; vertical-align: middle;">
+          {% if source.weather.icon %}{{ source.weather.icon }}{% endif %}
+          {% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}
+        </span>
       </p>
       <p style="font-size: 14px; margin: 0; text-align: right;">
         Max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}<br>

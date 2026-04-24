@@ -37,21 +37,17 @@ return {
 
 ### 3. Icon Library node (Code)
 
-No inputs. Returns a flat map of `{ name: svgString }`. Add icons here as the set grows.
-Event titles in Google Calendar must match these keys exactly.
+No inputs. Returns a flat map of `{ name: svgString }`.
 
-```js
-return {
-  swimming: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg>',
-  dinner:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>',
-  school:   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>',
-  bike:     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>',
-  music:    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-  sport:    '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.596 12.768a2 2 0 1 0 2.829-2.829l-1.768-1.767a2 2 0 0 0 2.828-2.829l-2.828-2.828a2 2 0 0 0-2.829 2.828l-1.767-1.768a2 2 0 1 0-2.829 2.829z"/><path d="m2.5 21.5 1.4-1.4"/><path d="m20.1 3.9 1.4-1.4"/><path d="M5.343 21.485a2 2 0 1 0 2.829-2.828l1.767 1.768a2 2 0 1 0 2.829-2.829l-6.364-6.364a2 2 0 1 0-2.829 2.829l1.768 1.767a2 2 0 0 0-2.828 2.829z"/><path d="m9.6 14.4 4.8-4.8"/></svg>',
-  home:     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
-  moon:     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>',
-};
+`assets/icons/*.svg` is the source of truth. The build script generates the paste-ready JS:
+
 ```
+/usr/bin/ruby scripts/build_icon_library.rb
+```
+
+Output: `doc/dashboard/icon_library.js` — paste its contents into this Code node.
+
+Weather icon keys (`sun`, `cloud`, `rain`, `snow`, `storm`, `moon`) are looked up by the Dashboard Code node to render the current condition. Calendar event keys (e.g. `swimming`, `bike`) must match Google Calendar event titles exactly.
 
 ### 4. Calendar HTTP Request nodes (×4)
 
@@ -101,16 +97,41 @@ References all original nodes by name (not Merge).
 ```js
 const icons = $('Icon Library').item.json;
 
+// WMO weather code → icon key (matches assets/icons/*.svg filenames)
+const WMO_ICON = {
+  0: 'sun',
+  1: 'sun',  2: 'cloud', 3: 'cloud',
+  51: 'rain', 53: 'rain', 55: 'rain',
+  61: 'rain', 63: 'rain', 65: 'rain',
+  71: 'snow', 73: 'snow', 75: 'snow', 77: 'snow',
+  80: 'rain', 81: 'rain', 82: 'rain',
+  95: 'storm', 96: 'storm', 99: 'storm',
+};
+
+const WMO_LABEL = {
+  0: 'Clear',    1: 'Clear',    2: 'Cloudy',   3: 'Overcast',
+  51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+  61: 'Rain',    63: 'Rain',    65: 'Rain',
+  71: 'Snow',    73: 'Snow',    75: 'Snow',    77: 'Snow',
+  80: 'Showers', 81: 'Showers', 82: 'Showers',
+  95: 'Storm',   96: 'Storm',   99: 'Storm',
+};
+
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').item.json;
 const weather = (weatherRaw.error || !weatherRaw.current) ? {
-  temp: null, code: null, max_temp: null, daily_code: null
-} : {
-  temp: weatherRaw.current.temperature_2m,
-  code: weatherRaw.current.weather_code,
-  max_temp: weatherRaw.daily.temperature_2m_max[0],
-  daily_code: weatherRaw.daily.weather_code[0]
-};
+  temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null
+} : (() => {
+  const code = weatherRaw.current.weather_code;
+  return {
+    temp:       weatherRaw.current.temperature_2m,
+    code,
+    max_temp:   weatherRaw.daily.temperature_2m_max[0],
+    daily_code: weatherRaw.daily.weather_code[0],
+    icon:       icons[WMO_ICON[code]] || null,
+    condition:  WMO_LABEL[code] || 'Weather',
+  };
+})();
 
 // Calendar — extract today's all-day event icons per member
 function memberIcons(nodeName) {
@@ -143,7 +164,7 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 
 ```json
 {
-  "weather": { "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2 },
+  "weather": { "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2, "icon": "<svg...>", "condition": "Cloudy" },
   "family": [
     { "member": "Ulysse", "icons": ["<svg...>", "<svg...>"] },
     { "member": "Mia",    "icons": [] },
@@ -162,6 +183,8 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 | Weather code | `{{ source.weather.code }}` |
 | Max temp today | `{{ source.weather.max_temp }}` |
 | Daily weather code | `{{ source.weather.daily_code }}` |
+| Weather icon (SVG) | `{{ source.weather.icon }}` |
+| Weather condition | `{{ source.weather.condition }}` |
 | Random name | `{{ source.names[idx] }}` |
 | Family rows | `{% for m in source.family %}` |
 | Member name | `{{ m.member }}` |
@@ -177,9 +200,11 @@ All external HTTP nodes have **"Continue on error"** enabled. Dashboard Code che
 
 ## Adding More Icons
 
-1. Add entry to Icon Library node: `roller: '<svg...>'`
-2. Create Google Calendar all-day event titled `roller`
-3. No other changes needed
+1. Add the SVG file to `assets/icons/roller.svg`
+2. Run `/usr/bin/ruby scripts/build_icon_library.rb`
+3. Paste the updated `doc/dashboard/icon_library.js` into the n8n Icon Library Code node
+4. Create a Google Calendar all-day event titled `roller`
+5. No other changes needed
 
 ## Terminus Extension
 

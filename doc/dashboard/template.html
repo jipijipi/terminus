@@ -81,9 +81,11 @@
     {% for m in source.family %}
       <p style="font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px;">
         <strong style="min-width: 56px;">{{ m.member }}</strong>
-        <span style="display: flex; align-items: center; gap: 4px;">
+        <span style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
           {% if m.icons.size > 0 %}
-            {% for icon in m.icons %}{{ icon }}{% endfor %}
+            {% for icon in m.icons %}
+              {% if icon.svg %}{{ icon.svg }}{% elsif icon.text %}<span style="font-size: 13px;">{{ icon.text }}</span>{% endif %}
+            {% endfor %}
           {% else %}
             <span style="opacity: 0.3; font-size: 16px;">—</span>
           {% endif %}

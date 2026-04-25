@@ -1,7 +1,6 @@
 - calendar : custom
 - grid 8px
 - french
-- point system
 - dark mode
 - day display : breakie - school - teeth - bed
 - invader

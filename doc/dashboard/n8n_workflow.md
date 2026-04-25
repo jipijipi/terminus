@@ -140,8 +140,11 @@ function memberIcons(nodeName) {
   if (raw.error || !raw.items) return [];
   return raw.items
     .filter(e => e.start && e.start.date && !e.start.dateTime)
-    .map(e => icons[e.summary] || "")
-    .filter(Boolean);
+    .map(e => {
+      const key = Object.keys(icons).find(k => k.toLowerCase() === (e.summary || '').toLowerCase());
+      return key ? { svg: icons[key] } : { text: e.summary || '' };
+    })
+    .filter(e => e.svg || e.text);
 }
 
 const family = [

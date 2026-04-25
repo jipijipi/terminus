@@ -1,4 +1,5 @@
-- calendar
+- calendar : custom
+- grid 8px
 - french
 - point system
 - dark mode

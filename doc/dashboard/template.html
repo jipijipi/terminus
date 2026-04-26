@@ -5,10 +5,17 @@
   LAYOUT: edit grid-template-areas to swap zones. Available: date, weather, family, bons-points, status, extra.
 {% endcomment %}
 
+{% assign night_mode = source.night_mode %}
+
 {% assign temp = source.weather.temp %}
 {% assign code = source.weather.code %}
-{% assign max_temp = source.weather.max_temp %}
-{% assign daily_code = source.weather.daily_code %}
+{% if night_mode %}
+  {% assign max_temp = source.weather.tomorrow_max_temp %}
+  {% assign daily_code = source.weather.tomorrow_daily_code %}
+{% else %}
+  {% assign max_temp = source.weather.max_temp %}
+  {% assign daily_code = source.weather.daily_code %}
+{% endif %}
 
 {% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
   {% assign umbrella = true %}
@@ -34,6 +41,8 @@
   {% assign hello_name = "Mia" %}
 {% endif %}
 {% assign wheel_angle = source.random | modulo: 8 | times: 45 %}
+
+{% if night_mode %}<style>html { background: #000; } body { filter: invert(1); }</style>{% endif %}
 
 <!-- OUTER GRID — 800×480, 2×3 zones of 240×240, 1px dividers, 40px h-margin
      Row 1: date | weather | wheel
@@ -71,8 +80,12 @@
         {% if source.weather.icon %}{{ source.weather.icon }}{% endif %}
       </span>
     </p>
+    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5;">
+      {% if night_mode %}Demain{% else %}Aujourd'hui{% endif %}
+    </p>
     <p style="font-size: 14px; margin: 0 0 8px; line-height: 16px;">
-      {% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}
+      {% if night_mode %}{% if source.weather.tomorrow_icon %}{{ source.weather.tomorrow_icon }}{% endif %}{% else %}{% if source.weather.icon %}{{ source.weather.icon }}{% endif %}{% endif %}
+      {% if night_mode %}{% if source.weather.tomorrow_condition %}{{ source.weather.tomorrow_condition }}{% else %}?{% endif %}{% else %}{% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}{% endif %}
       · max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}
     </p>
     <p style="font-size: 14px; margin: 0; line-height: 16px;">
@@ -83,7 +96,7 @@
   <!-- Zone: family — 240×240 -->
   <div style="grid-area: family; background: #fff; padding: 16px; overflow: hidden;">
     <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
-      Bonjour, {{ hello_name }} !
+      {% if night_mode %}Demain · {% else %}Aujourd'hui · {% endif %}{{ hello_name }} !
     </p>
     {% for m in source.family %}
       <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">

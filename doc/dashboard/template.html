@@ -52,7 +52,7 @@
       {% if source.weather.icon %}<span style="font-size: 28px; vertical-align: middle;">{{ source.weather.icon }}</span>{% endif %}
       {% if source.weather.temp %}{{ source.weather.temp }}°{% else %}--°{% endif %}
     </p>
-    <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px;">
+    <p style="font-size: 14px; margin: 0 0 16px; line-height: 16px; margin-top: -4px;">
       Ressenti {% if source.weather.feels_like %}{{ source.weather.feels_like }}°{% else %}--°{% endif %}
     </p>
     <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px; align-self: flex-start;">
@@ -67,7 +67,7 @@
         {% if source.weather.max_temp %}{{ source.weather.max_temp }}°{% else %}--°{% endif %}
       {% endif %}
     </p>
-    <p style="font-size: 12px; margin: 0; line-height: 16px;">
+    <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px;">
       Ressenti {% if night_mode %}{% if source.weather.tomorrow_max_feels_like %}{{ source.weather.tomorrow_max_feels_like }}°{% else %}--°{% endif %}{% else %}{% if source.weather.max_feels_like %}{{ source.weather.max_feels_like }}°{% else %}--°{% endif %}{% endif %}
     </p>
   </div>
@@ -147,10 +147,10 @@
       {% endif %}
       <p style="font-size: 14px; margin: 0 0 16px; line-height: 16px;">{{ source.content.text }}</p>
       {% if source.content.answer %}
-        <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">→ {{ source.content.answer }}</p>
+        <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px; color: #666;">→ {{ source.content.answer }}</p>
       {% endif %}
     </div>
-    <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">{{ "now" | date: "%H:%M" }}</p>
+    <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px; color: #666;">{{ "now" | date: "%H:%M" }}</p>
   </div>
 
 </div>

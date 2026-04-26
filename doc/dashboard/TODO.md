@@ -31,27 +31,14 @@ Night mode
     Small underneath :
     Max feels like for tomorrow(X°)
 
-### Calendar
-
-Day mode
-    Todays events
-Night mode
-    Tomorrows events
-
----
 
 ## Backlog
 
 - Bon points : radial circle with counter in the middle
-- New font
-- Temperature ressentie (feels like)
-- Points circle
+- New font  
 - French locale
-- Dark mode (night mode — see above)
 - Day display : breakie - school - teeth - bed
 - Invader
-- Quiz
-- Blague
 - Fly.io deploy
 - Intense refresh
 - Firmware update

@@ -115,17 +115,46 @@
   </div>
 
   <!-- Zone: bons-points — 240×240 -->
-  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden;">
-    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Bons Points · semaine</p>
-    <p style="font-size: 40px; font-weight: bold; margin: 0 0 16px; line-height: 48px;">
-      {{ source.bonusPoints }}
-    </p>
-    <div style="background: #eee; height: 16px; border-radius: 8px; overflow: hidden;">
-      {% assign pct = source.bonusPoints | times: 10 %}
-      {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
-      <div style="width: {{ pct }}%; height: 100%; background: #000;"></div>
-    </div>
-    <p style="font-size: 12px; margin: 8px 0 0; line-height: 16px; color: #666;">/ 10 points</p>
+  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <svg id="d" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 160" width="160" height="160">
+      <defs>
+        <style>
+          .st0 {
+            font-family: Verdana, Verdana;
+            font-size: 20px;
+          }
+
+          .st0, .st1 {
+            isolation: isolate;
+          }
+
+          .st2 {
+            stroke-width: 2px;
+          }
+
+          .st2, .st3 {
+            fill: none;
+            stroke: #000;
+            stroke-miterlimit: 10;
+          }
+
+          .st3 {
+            stroke-linecap: round;
+            stroke-width: 10px;
+          }
+        </style>
+      </defs>
+      <g transform="translate(80,80)">
+        <circle class="st2" r="70"/>
+        <circle id="progress" class="st3" r="70"/>
+      </g>
+      <g class="st1">
+        <g class="st1">
+          <text class="st0" transform="translate(50 86.6)"><tspan x="0" y="0">10/10</tspan></text>
+        </g>
+      </g>
+      <rect class="st2" width="160" height="160"/>
+    </svg>
   </div>
 
   <!-- Zone: wheel — 240×240 -->

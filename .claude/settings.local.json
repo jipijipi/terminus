@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Edit(/Users/jpl/Downloads/*.json)",
       "Bash(grep -E \"\\\\.\\(rb|json|yml\\)$\")",
       "Bash(grep -E \"\\\\.rb$\")",
       "Bash(grep -E \"\\\\.\\(rb|yml\\)$\")",

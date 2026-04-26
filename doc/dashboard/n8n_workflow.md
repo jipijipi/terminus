@@ -22,7 +22,9 @@ Webhook → Content Length ──► Content Index ──► Content Item ──
 
 ### 2. Date Prep node (Code)
 
-Computes `timeMin`/`timeMax` for the relevant day. In night mode (05:00–23:59 Paris time) it targets tomorrow's events; in day mode (00:00–04:59) it targets today's. All 4 Calendar nodes share this single pair.
+- **Mode: `Run once for all items`** — same reason as Dashboard Code; avoids outputting one item per branch instead of one.
+
+Computes `timeMin`/`timeMax` for the relevant day. In night mode (17:00–23:59 Paris time) it targets tomorrow's events; in day mode (00:00–16:59) it targets today's. All 4 Calendar nodes share this single pair.
 
 ```js
 const now = new Date();
@@ -33,17 +35,17 @@ const parisHour = parseInt(
   now.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }),
   10
 );
-const night_mode = parisHour >= 5;
+const night_mode = parisHour >= 17;
 
 const target = new Date(now);
 if (night_mode) target.setDate(target.getDate() + 1);
 const next = new Date(target);
 next.setDate(next.getDate() + 1);
 
-return {
+return [{ json: {
   timeMin: `${ymd(target)}T00:00:00Z`,
   timeMax: `${ymd(next)}T00:00:00Z`,
-};
+} }];
 ```
 
 ### 3. Icon Library node (Code)
@@ -160,7 +162,7 @@ const parisHour = parseInt(
   new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }),
   10
 );
-const night_mode = parisHour >= 5;
+const night_mode = parisHour >= 17;
 
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').first().json;
@@ -189,12 +191,14 @@ if (weatherRaw.error || !weatherRaw.current) {
   };
 }
 
-// Calendar — extract all-day event icons per member
+// Calendar — extract all-day event icons per member, strictly on the target date
+// Google Calendar returns multi-day events that start before timeMin, so filter by exact date
+const targetDate = $('Date Prep').first().json.timeMin.slice(0, 10);
 function memberIcons(nodeName) {
   const raw = $(nodeName).first().json;
   if (raw.error || !raw.items) return [];
   return raw.items
-    .filter(e => e.start && e.start.date && !e.start.dateTime)
+    .filter(e => e.start && e.start.date === targetDate)
     .map(e => {
       const key = Object.keys(icons).find(k => k.toLowerCase() === (e.summary || '').toLowerCase());
       return key ? { svg: icons[key] } : { text: e.summary || '' };
@@ -286,8 +290,8 @@ The dashboard has two visual and content modes driven by time of day (Paris time
 
 | Mode | Hours | Look | Weather | Calendar |
 |---|---|---|---|---|
-| Day | 00:00–04:59 | White background | Today's forecast | Today's events |
-| Night | 05:00–23:59 | Inverted (black bg) | Tomorrow's forecast | Tomorrow's events |
+| Day | 00:00–16:59 | White background | Today's forecast | Today's events |
+| Night | 17:00–23:59 | Inverted (black bg) | Tomorrow's forecast | Tomorrow's events |
 
 `night_mode` is computed in Dashboard Code and exposed to the Liquid template as `source.night_mode`.
 

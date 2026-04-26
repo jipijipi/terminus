@@ -6,8 +6,8 @@ Single webhook that fetches weather + Google Calendar events, merges all data in
 
 ```
 Webhook → Date Prep ──► Ulysse Calendar ──┐
-                    └──► Mia Calendar ─────┤
-                    └──► Maman Calendar ───┤
+                    ├──► Mia Calendar ─────┤
+                    ├──► Maman Calendar ───┤
                     └──► Papa Calendar ────┤
 Webhook → Icon Library ────────────────────┤
 Webhook → Weather Request ─────────────────┤
@@ -22,17 +22,27 @@ Webhook → Content Length ──► Content Index ──► Content Item ──
 
 ### 2. Date Prep node (Code)
 
-Computes `timeMin`/`timeMax` for today in UTC. Referenced by all 4 Calendar HTTP Request nodes.
+Computes `timeMin`/`timeMax` for the relevant day. In night mode (05:00–23:59 Paris time) it targets tomorrow's events; in day mode (00:00–04:59) it targets today's. All 4 Calendar nodes share this single pair.
 
 ```js
 const now = new Date();
 const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-const tomorrow = new Date(now);
-tomorrow.setDate(tomorrow.getDate() + 1);
+
+const parisHour = parseInt(
+  now.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }),
+  10
+);
+const night_mode = parisHour >= 5;
+
+const target = new Date(now);
+if (night_mode) target.setDate(target.getDate() + 1);
+const next = new Date(target);
+next.setDate(next.getDate() + 1);
+
 return {
-  timeMin: `${ymd(now)}T00:00:00Z`,
-  timeMax: `${ymd(tomorrow)}T00:00:00Z`
+  timeMin: `${ymd(target)}T00:00:00Z`,
+  timeMax: `${ymd(next)}T00:00:00Z`,
 };
 ```
 
@@ -52,7 +62,7 @@ Weather icon keys (`sun`, `cloud`, `rain`, `snow`, `storm`, `moon`) are looked u
 
 ### 4. Calendar HTTP Request nodes (×4)
 
-One node per family member. Enable **"Continue on error"** on each (Settings tab).
+One node per family member. Date Prep already decided whether `timeMin`/`timeMax` covers today or tomorrow, so these nodes are unchanged from the original. Enable **"Continue on error"** on each (Settings tab).
 
 - Method: `GET`
 - URL (expression mode):
@@ -71,8 +81,9 @@ Enable **"Continue on error"** (Settings tab).
 - Method: `GET`
 - URL:
   ```
-  https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weather_code&daily=temperature_2m_max,weather_code&timezone=Europe/Paris&forecast_days=1
+  https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weather_code&daily=temperature_2m_max,weather_code&timezone=Europe/Paris&forecast_days=2
   ```
+- `forecast_days=2` returns today (index 0) and tomorrow (index 1) in the `daily` arrays.
 - Response format: `JSON`
 
 ### 6. Upstash GET node (HTTP Request)
@@ -141,24 +152,41 @@ const WMO_LABEL = {
   95: 'Storm',   96: 'Storm',   99: 'Storm',
 };
 
+// Night mode: true from 05:00 to 23:59 Paris time, false from 00:00 to 04:59
+const parisHour = parseInt(
+  new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }),
+  10
+);
+const night_mode = parisHour >= 5;
+
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').item.json;
 let weather;
 if (weatherRaw.error || !weatherRaw.current) {
-  weather = { temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null };
-} else {
-  const code = weatherRaw.current.weather_code;
   weather = {
+    temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null,
+    tomorrow_max_temp: null, tomorrow_daily_code: null, tomorrow_icon: null, tomorrow_condition: null,
+  };
+} else {
+  const code     = weatherRaw.current.weather_code;
+  const tmrwCode = weatherRaw.daily.weather_code[1];
+  weather = {
+    // today
     temp:       weatherRaw.current.temperature_2m,
     code,
     max_temp:   weatherRaw.daily.temperature_2m_max[0],
     daily_code: weatherRaw.daily.weather_code[0],
     icon:       icons[WMO_ICON[code]] || null,
     condition:  WMO_LABEL[code] || 'Weather',
+    // tomorrow
+    tomorrow_max_temp:   weatherRaw.daily.temperature_2m_max[1],
+    tomorrow_daily_code: tmrwCode,
+    tomorrow_icon:       icons[WMO_ICON[tmrwCode]] || null,
+    tomorrow_condition:  WMO_LABEL[tmrwCode] || 'Weather',
   };
 }
 
-// Calendar — extract today's all-day event icons per member
+// Calendar — extract all-day event icons per member
 function memberIcons(nodeName) {
   const raw = $(nodeName).item.json;
   if (raw.error || !raw.items) return [];
@@ -171,6 +199,8 @@ function memberIcons(nodeName) {
     .filter(e => e.svg || e.text);
 }
 
+// family always contains the relevant day's events (today or tomorrow)
+// depending on what Date Prep targeted — no separate family_tomorrow needed
 const family = [
   { member: "Ulysse", icons: memberIcons('Ulysse Calendar') },
   { member: "Mia",    icons: memberIcons('Mia Calendar') },
@@ -196,26 +226,30 @@ if (contentRaw.result) {
   } catch (e) {}
 }
 
-return { weather, family, bonusPoints, random, content };
+return { weather, family, bonusPoints, random, content, night_mode };
 ```
 
-`icons: []` means no events today → Liquid renders `—` placeholder.
+`icons: []` means no events → Liquid renders `—` placeholder.
 Unknown calendar event titles (no matching icon key) are filtered out silently.
 
 ## JSON shape exposed to Terminus
 
 ```json
 {
-  "weather": { "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2, "icon": "<svg...>", "condition": "Cloudy" },
+  "weather": {
+    "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2, "icon": "<svg...>", "condition": "Cloudy",
+    "tomorrow_max_temp": 22.1, "tomorrow_daily_code": 0, "tomorrow_icon": "<svg...>", "tomorrow_condition": "Clear"
+  },
   "family": [
-    { "member": "Ulysse", "icons": ["<svg...>", "<svg...>"] },
+    { "member": "Ulysse", "icons": [{ "svg": "<svg...>" }] },
     { "member": "Mia",    "icons": [] },
-    { "member": "Maman",  "icons": ["<svg...>"] },
+    { "member": "Maman",  "icons": [{ "svg": "<svg...>" }] },
     { "member": "Papa",   "icons": [] }
   ],
   "bonusPoints": 4,
   "random": 317,
-  "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" }
+  "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
+  "night_mode": true
 }
 ```
 
@@ -223,21 +257,75 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 
 | Data | Variable |
 |---|---|
+| Night mode flag | `{{ source.night_mode }}` — `true` from 05:00, `false` 00:00–04:59 |
 | Current temp | `{{ source.weather.temp }}` |
 | Weather code | `{{ source.weather.code }}` |
 | Max temp today | `{{ source.weather.max_temp }}` |
 | Daily weather code | `{{ source.weather.daily_code }}` |
 | Weather icon (SVG) | `{{ source.weather.icon }}` |
 | Weather condition | `{{ source.weather.condition }}` |
-| Random name | `{{ source.names[idx] }}` |
-| Family rows | `{% for m in source.family %}` |
+| Max temp tomorrow | `{{ source.weather.tomorrow_max_temp }}` |
+| Tomorrow weather code | `{{ source.weather.tomorrow_daily_code }}` |
+| Tomorrow icon (SVG) | `{{ source.weather.tomorrow_icon }}` |
+| Tomorrow condition | `{{ source.weather.tomorrow_condition }}` |
+| Family rows | `{% for m in source.family %}` — always the relevant day |
 | Member name | `{{ m.member }}` |
-| Member icons | `{% for icon in m.icons %}{{ icon }}{% endfor %}` |
+| Member icons | `{% for icon in m.icons %}{{ icon.svg }}{% endfor %}` |
 | Bons Points count | `{{ source.bonusPoints }}` |
 | Random 0–999 | `{{ source.random }}` — derive with `modulo: N` |
 | Content type | `{{ source.content.type }}` — `joke`, `fact`, or `quiz` |
 | Content text | `{{ source.content.text }}` |
 | Content answer | `{{ source.content.answer }}` — present only for quizzes |
+
+## Day/Night Mode
+
+The dashboard has two visual and content modes driven by time of day (Paris timezone).
+
+| Mode | Hours | Look | Weather | Calendar |
+|---|---|---|---|---|
+| Day | 00:00–04:59 | White background | Today's forecast | Today's events |
+| Night | 05:00–23:59 | Inverted (black bg) | Tomorrow's forecast | Tomorrow's events |
+
+`night_mode` is computed in Dashboard Code and exposed to the Liquid template as `source.night_mode`.
+
+### Visual inversion (Liquid template)
+
+Add this in the `<head>` of the template. The CSS invert is applied before Ferrum takes the screenshot, so the existing MiniMagick monochrome pipeline handles it transparently — no Terminus core changes needed.
+
+```liquid
+{% if source.night_mode %}
+<style>
+  html { background: #000; }
+  body { filter: invert(1); }
+</style>
+{% endif %}
+```
+
+### Content branching (Liquid template)
+
+`source.family` already contains the relevant day's events. The only branching needed is for labels and which weather slot to show:
+
+```liquid
+{% if source.night_mode %}
+  <small>tomorrow</small>
+  {{ source.weather.tomorrow_icon }} {{ source.weather.tomorrow_max_temp }}°
+{% else %}
+  <small>today</small>
+  {{ source.weather.icon }} {{ source.weather.max_temp }}°
+{% endif %}
+
+{% for m in source.family %}…{% endfor %}
+```
+
+### Testing night mode
+
+To test without waiting for 05:00, temporarily hardcode `night_mode` in Dashboard Code:
+
+```js
+const night_mode = true; // remove after testing
+```
+
+Then trigger the webhook manually and check the generated image in the Terminus UI.
 
 ## Error Handling
 

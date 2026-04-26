@@ -13,7 +13,8 @@
       "Bash(/usr/bin/ruby --version)",
       "Bash(/usr/bin/ruby *)",
       "Bash(cat)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(xargs -I {} basename {})"
     ]
   }
 }

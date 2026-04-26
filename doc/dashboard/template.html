@@ -115,45 +115,20 @@
   </div>
 
   <!-- Zone: bons-points — 240×240 -->
+  {% assign pct = source.bonusPoints | times: 10 %}
+  {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
+  {% assign filled = 440.0 | times: pct | divided_by: 100 %}
+  {% assign offset = 440 | minus: filled %}
   <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    <svg id="d" xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 160 160" width="160" height="160">
-      <defs>
-        <style>
-          .st0 {
-            font-family: Verdana, Verdana;
-            font-size: 20px;
-          }
-
-          .st0, .st1 {
-            isolation: isolate;
-          }
-
-          .st2 {
-            stroke-width: 2px;
-          }
-
-          .st2, .st3 {
-            fill: none;
-            stroke: #000;
-            stroke-miterlimit: 10;
-          }
-
-          .st3 {
-            stroke-linecap: round;
-            stroke-width: 10px;
-          }
-        </style>
-      </defs>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
       <g transform="translate(80,80)">
-        <circle class="st2" r="70"/>
-        <circle id="progress" class="st3" r="70"/>
+        <circle r="70" fill="none" stroke="#eee" stroke-width="10"/>
+        <circle r="70" fill="none" stroke="#000" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="440" stroke-dashoffset="{{ offset }}"
+          transform="rotate(-90)"/>
       </g>
-      <g class="st1">
-        <g class="st1">
-          <text class="st0" transform="translate(50 86.6)"><tspan x="0" y="0">10/10</tspan></text>
-        </g>
-      </g>
-      <rect class="st2" width="160" height="160"/>
+      <text transform="translate(80,80)" text-anchor="middle" dy="0.35em" font-size="40" font-weight="bold" fill="#000">{{ source.bonusPoints }}</text>
+      <text transform="translate(80,112)" text-anchor="middle" dy="0.35em" font-size="12" fill="#666">/ 10</text>
     </svg>
   </div>
 

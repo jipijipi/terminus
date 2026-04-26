@@ -37,14 +37,14 @@
 
 <!-- OUTER GRID — 800×480, 2×3 zones of 240×240, 1px dividers, 40px h-margin
      Row 1: date | weather | wheel
-     Row 2: bons-points | family | status
+     Row 2: bons-points | family | content
 -->
 <div style="
   font-family: sans-serif;
   display: grid;
   grid-template-columns: 240px 240px 240px;
   grid-template-rows: 240px 240px;
-  grid-template-areas: 'date weather wheel' 'bons-points family status';
+  grid-template-areas: 'date weather wheel' 'bons-points family content';
   gap: 1px;
   padding: 0 40px;
   background: #000;
@@ -137,9 +137,22 @@
     </div>
   </div>
 
-  <!-- Zone: status — 240×240 -->
-  <div style="grid-area: status; background: #fff; padding: 16px; overflow: hidden;">
-    <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">Mis à jour {{ "now" | date: "%H:%M" }}</p>
+  <!-- Zone: content — 240×240 (jokes, facts, quizzes from Redis) -->
+  <div style="grid-area: content; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      {% if source.content.type == 'joke' %}
+        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Blague</p>
+      {% elsif source.content.type == 'quiz' %}
+        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Quiz</p>
+      {% else %}
+        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Le savais-tu ?</p>
+      {% endif %}
+      <p style="font-size: 14px; margin: 0 0 16px; line-height: 16px;">{{ source.content.text }}</p>
+      {% if source.content.answer %}
+        <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">→ {{ source.content.answer }}</p>
+      {% endif %}
+    </div>
+    <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">{{ "now" | date: "%H:%M" }}</p>
   </div>
 
 </div>

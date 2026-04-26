@@ -11,7 +11,8 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
                     └──► Papa Calendar ────┤
 Webhook → Icon Library ────────────────────┤
 Webhook → Weather Request ─────────────────┤
-Webhook → Upstash GET ─────────────────────┴──► Merge ──► Dashboard Code
+Webhook → Upstash GET ─────────────────────┤
+Webhook → Content Length ──► Content Index ──► Content Item ──┴──► Merge ──► Dashboard Code
 ```
 
 ### 1. Webhook node
@@ -85,12 +86,35 @@ Enable **"Continue on error"** (Settings tab).
 
 Upstash REST API returns `{ "result": "4" }` — the value is a string, coerced to int in Dashboard Code.
 
-### 7. Merge node
+### 7. Content nodes (×3)
+
+Fetch a random item from the `content` Redis list. Chain: Content Length → Content Index → Content Item.
+
+**Content Length** (HTTP Request, "Continue on error"):
+- Method: `GET`
+- URL: `https://YOUR_UPSTASH_HOST/llen/content`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": 42 }`
+
+**Content Index** (Code):
+```js
+const count = $('Content Length').item.json.result || 0;
+const idx = count > 0 ? Math.floor(Math.random() * count) : 0;
+return { idx };
+```
+
+**Content Item** (HTTP Request, "Continue on error"):
+- Method: `GET`
+- URL (expression): `https://YOUR_UPSTASH_HOST/lindex/content/{{ $('Content Index').item.json.idx }}`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": "{\"type\":\"joke\",\"text\":\"...\"}" }` — result is a JSON string
+
+### 8. Merge node
 - Mode: `Combine` → `Combine by position`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (7 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET + Content Item (9 total)
 - Ensures all branches have executed before Dashboard Code runs
 
-### 8. Dashboard Code node (Code)
+### 9. Dashboard Code node (Code)
 
 References all original nodes by name (not Merge).
 
@@ -161,7 +185,17 @@ const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 // Generic random integer 0–999. Liquid derives all random features from it via modulo.
 const random = Math.floor(Math.random() * 1000);
 
-return { weather, family, bonusPoints, random };
+// Content (jokes, facts, quizzes) — fetched from Redis list by Content Item node
+const contentRaw = $('Content Item').item.json;
+let content = { type: 'fact', text: '', answer: null };
+if (contentRaw.result) {
+  try {
+    const parsed = JSON.parse(contentRaw.result);
+    content = { type: parsed.type || 'fact', text: parsed.text || '', answer: parsed.answer || null };
+  } catch (e) {}
+}
+
+return { weather, family, bonusPoints, random, content };
 ```
 
 `icons: []` means no events today → Liquid renders `—` placeholder.
@@ -179,7 +213,8 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
     { "member": "Papa",   "icons": [] }
   ],
   "bonusPoints": 4,
-  "random": 317
+  "random": 317,
+  "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" }
 }
 ```
 
@@ -199,6 +234,9 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 | Member icons | `{% for icon in m.icons %}{{ icon }}{% endfor %}` |
 | Bons Points count | `{{ source.bonusPoints }}` |
 | Random 0–999 | `{{ source.random }}` — derive with `modulo: N` |
+| Content type | `{{ source.content.type }}` — `joke`, `fact`, or `quiz` |
+| Content text | `{{ source.content.text }}` |
+| Content answer | `{{ source.content.answer }}` — present only for quizzes |
 
 ## Error Handling
 
@@ -220,6 +258,29 @@ All external HTTP nodes have **"Continue on error"** enabled. Dashboard Code che
 - **Kind**: `poll`
 - **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
 - Single URI → data exposed as `source` (not `source_1`)
+
+## Content Pool (jokes, facts, quizzes)
+
+Items live in an Upstash Redis **List** at key `content`. Each item is a JSON string.
+
+**Item format:**
+```json
+{ "type": "joke", "text": "Pourquoi les plongeurs plongent en arrière ? Parce que sinon ils tomberaient dans le bateau." }
+{ "type": "fact", "text": "Les pieuvres ont trois cœurs." }
+{ "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" }
+```
+
+**Add an item** (Upstash console → CLI, or curl):
+```bash
+curl -X POST https://YOUR_UPSTASH_HOST/rpush/content \
+  -H "Authorization: Bearer YOUR_UPSTASH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '["{\"type\":\"joke\",\"text\":\"Votre blague ici.\"}"]'
+```
+
+**View all items:** Upstash console → Data Browser → key `content`
+
+**Remove an item:** use `LREM` or edit directly in the console.
 
 ## Bons Points Counter
 

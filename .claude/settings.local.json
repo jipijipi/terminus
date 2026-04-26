@@ -15,7 +15,8 @@
       "Bash(/usr/bin/ruby *)",
       "Bash(cat)",
       "Read(//tmp/**)",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(grep -E \"\\\\.\\(css|html|md\\)$\")"
     ]
   }
 }

@@ -84,7 +84,7 @@ Enable **"Continue on error"** (Settings tab).
 - Method: `GET`
 - URL:
   ```
-  https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weather_code&daily=temperature_2m_max,weather_code&timezone=Europe/Paris&forecast_days=2
+  https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&current=temperature_2m,weather_code,apparent_temperature&daily=temperature_2m_max,weather_code,apparent_temperature_max&timezone=Europe/Paris&forecast_days=2
   ```
 - `forecast_days=2` returns today (index 0) and tomorrow (index 1) in the `daily` arrays.
 - Response format: `JSON`
@@ -166,24 +166,29 @@ let weather;
 if (weatherRaw.error || !weatherRaw.current) {
   weather = {
     temp: null, code: null, max_temp: null, daily_code: null, icon: null, condition: null,
+    feels_like: null, max_feels_like: null,
     tomorrow_max_temp: null, tomorrow_daily_code: null, tomorrow_icon: null, tomorrow_condition: null,
+    tomorrow_max_feels_like: null,
   };
 } else {
   const code     = weatherRaw.current.weather_code;
   const tmrwCode = weatherRaw.daily.weather_code[1];
   weather = {
     // today
-    temp:       weatherRaw.current.temperature_2m,
+    temp:           weatherRaw.current.temperature_2m,
     code,
-    max_temp:   weatherRaw.daily.temperature_2m_max[0],
-    daily_code: weatherRaw.daily.weather_code[0],
-    icon:       icons[WMO_ICON[code]] || null,
-    condition:  WMO_LABEL[code] || 'Weather',
+    max_temp:       weatherRaw.daily.temperature_2m_max[0],
+    daily_code:     weatherRaw.daily.weather_code[0],
+    icon:           icons[WMO_ICON[code]] || null,
+    condition:      WMO_LABEL[code] || 'Weather',
+    feels_like:     weatherRaw.current.apparent_temperature,
+    max_feels_like: weatherRaw.daily.apparent_temperature_max[0],
     // tomorrow
-    tomorrow_max_temp:   weatherRaw.daily.temperature_2m_max[1],
-    tomorrow_daily_code: tmrwCode,
-    tomorrow_icon:       icons[WMO_ICON[tmrwCode]] || null,
-    tomorrow_condition:  WMO_LABEL[tmrwCode] || 'Weather',
+    tomorrow_max_temp:       weatherRaw.daily.temperature_2m_max[1],
+    tomorrow_daily_code:     tmrwCode,
+    tomorrow_icon:           icons[WMO_ICON[tmrwCode]] || null,
+    tomorrow_condition:      WMO_LABEL[tmrwCode] || 'Weather',
+    tomorrow_max_feels_like: weatherRaw.daily.apparent_temperature_max[1],
   };
 }
 
@@ -240,7 +245,9 @@ return [{ json: { weather, family, bonusPoints, random, content, night_mode } }]
 {
   "weather": {
     "temp": 14.2, "code": 2, "max_temp": 19.4, "daily_code": 2, "icon": "<svg...>", "condition": "Cloudy",
-    "tomorrow_max_temp": 22.1, "tomorrow_daily_code": 0, "tomorrow_icon": "<svg...>", "tomorrow_condition": "Clear"
+    "feels_like": 12.8, "max_feels_like": 17.1,
+    "tomorrow_max_temp": 22.1, "tomorrow_daily_code": 0, "tomorrow_icon": "<svg...>", "tomorrow_condition": "Clear",
+    "tomorrow_max_feels_like": 20.3
   },
   "family": [
     { "member": "Ulysse", "icons": [{ "svg": "<svg...>" }] },
@@ -266,10 +273,13 @@ return [{ json: { weather, family, bonusPoints, random, content, night_mode } }]
 | Daily weather code | `{{ source.weather.daily_code }}` |
 | Weather icon (SVG) | `{{ source.weather.icon }}` |
 | Weather condition | `{{ source.weather.condition }}` |
+| Current feels like | `{{ source.weather.feels_like }}` |
+| Max feels like today | `{{ source.weather.max_feels_like }}` |
 | Max temp tomorrow | `{{ source.weather.tomorrow_max_temp }}` |
 | Tomorrow weather code | `{{ source.weather.tomorrow_daily_code }}` |
 | Tomorrow icon (SVG) | `{{ source.weather.tomorrow_icon }}` |
 | Tomorrow condition | `{{ source.weather.tomorrow_condition }}` |
+| Max feels like tomorrow | `{{ source.weather.tomorrow_max_feels_like }}` |
 | Family rows | `{% for m in source.family %}` — always the relevant day |
 | Member name | `{{ m.member }}` |
 | Member icons | `{% for icon in m.icons %}{{ icon.svg }}{% endfor %}` |

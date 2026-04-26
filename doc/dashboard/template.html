@@ -7,32 +7,6 @@
 
 {% assign night_mode = source.night_mode %}
 
-{% assign temp = source.weather.temp %}
-{% assign code = source.weather.code %}
-{% if night_mode %}
-  {% assign max_temp = source.weather.tomorrow_max_temp %}
-  {% assign daily_code = source.weather.tomorrow_daily_code %}
-{% else %}
-  {% assign max_temp = source.weather.max_temp %}
-  {% assign daily_code = source.weather.daily_code %}
-{% endif %}
-
-{% if daily_code == 51 or daily_code == 53 or daily_code == 55 or daily_code == 61 or daily_code == 63 or daily_code == 65 or daily_code == 80 or daily_code == 81 or daily_code == 82 or daily_code == 71 or daily_code == 73 or daily_code == 75 or daily_code == 77 %}
-  {% assign umbrella = true %}
-{% else %}
-  {% assign umbrella = false %}
-{% endif %}
-
-{% if temp < 5 %}
-  {% assign clothing = "Grosse veste + écharpe" %}
-{% elsif temp < 12 %}
-  {% assign clothing = "Veste" %}
-{% elsif temp < 18 %}
-  {% assign clothing = "Veste légère" %}
-{% else %}
-  {% assign clothing = "T-shirt" %}
-{% endif %}
-{% if umbrella %}{% assign clothing = clothing | append: " + Parapluie ☂" %}{% endif %}
 
 {% assign name_idx = source.random | modulo: 2 %}
 {% if name_idx == 0 %}
@@ -73,23 +47,28 @@
 
   <!-- Zone: weather — 240×240 -->
   <div style="grid-area: weather; background: #fff; padding: 16px; overflow: hidden;">
-    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Météo · Paris</p>
-    <p style="font-size: 36px; font-weight: bold; margin: 0 0 8px; line-height: 40px;">
-      {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
-      <span style="font-size: 20px; font-weight: normal; vertical-align: middle;">
-        {% if source.weather.icon %}{{ source.weather.icon }}{% endif %}
-      </span>
+    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">maintenant</p>
+    <p style="font-size: 36px; font-weight: bold; margin: 0 0 2px; line-height: 40px;">
+      {% if source.weather.icon %}<span style="font-size: 28px; vertical-align: middle;">{{ source.weather.icon }}</span>{% endif %}
+      {% if source.weather.temp %}{{ source.weather.temp }}°{% else %}--°{% endif %}
     </p>
-    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5;">
-      {% if night_mode %}Demain{% else %}Aujourd'hui{% endif %}
+    <p style="font-size: 12px; margin: 0 0 12px; line-height: 16px; opacity: 0.6;">
+      Ressenti {% if source.weather.feels_like %}{{ source.weather.feels_like }}°{% else %}--°{% endif %}
     </p>
-    <p style="font-size: 14px; margin: 0 0 8px; line-height: 16px;">
-      {% if night_mode %}{% if source.weather.tomorrow_icon %}{{ source.weather.tomorrow_icon }}{% endif %}{% else %}{% if source.weather.icon %}{{ source.weather.icon }}{% endif %}{% endif %}
-      {% if night_mode %}{% if source.weather.tomorrow_condition %}{{ source.weather.tomorrow_condition }}{% else %}?{% endif %}{% else %}{% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}{% endif %}
-      · max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}
+    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
+      {% if night_mode %}demain{% else %}aujourd'hui{% endif %}
     </p>
-    <p style="font-size: 14px; margin: 0; line-height: 16px;">
-      {% if temp %}{{ clothing }}{% else %}Météo indisponible{% endif %}
+    <p style="font-size: 36px; font-weight: bold; margin: 0 0 2px; line-height: 40px;">
+      {% if night_mode %}
+        {% if source.weather.tomorrow_icon %}<span style="font-size: 28px; vertical-align: middle;">{{ source.weather.tomorrow_icon }}</span>{% endif %}
+        {% if source.weather.tomorrow_max_temp %}{{ source.weather.tomorrow_max_temp }}°{% else %}--°{% endif %}
+      {% else %}
+        {% if source.weather.icon %}<span style="font-size: 28px; vertical-align: middle;">{{ source.weather.icon }}</span>{% endif %}
+        {% if source.weather.max_temp %}{{ source.weather.max_temp }}°{% else %}--°{% endif %}
+      {% endif %}
+    </p>
+    <p style="font-size: 12px; margin: 0; line-height: 16px; opacity: 0.6;">
+      Ressenti {% if night_mode %}{% if source.weather.tomorrow_max_feels_like %}{{ source.weather.tomorrow_max_feels_like }}°{% else %}--°{% endif %}{% else %}{% if source.weather.max_feels_like %}{{ source.weather.max_feels_like }}°{% else %}--°{% endif %}{% endif %}
     </p>
   </div>
 

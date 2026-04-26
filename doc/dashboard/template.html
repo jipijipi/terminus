@@ -1,6 +1,8 @@
 {% comment %}
-  LAYOUT: change grid-template-areas to reorder zones. Available zones: date, weather, family, status.
-  DIVIDERS: controlled by gap + black background on the outer grid. Per-zone borders use border-bottom.
+  GRID: 2 rows × 3 columns of 240×240px zones on an 800×480 display.
+  Outer: padding 0 40px. Dividers: 1px via gap + black background.
+  8px base grid. Zone inner padding: 16px standard, 24px for thirds.
+  LAYOUT: edit grid-template-areas to swap zones. Available: date, weather, family, bons-points, status, extra.
 {% endcomment %}
 
 {% assign temp = source.weather.temp %}
@@ -15,15 +17,15 @@
 {% endif %}
 
 {% if temp < 5 %}
-  {% assign clothing = "Heavy coat + scarf" %}
+  {% assign clothing = "Grosse veste + écharpe" %}
 {% elsif temp < 12 %}
-  {% assign clothing = "Jacket" %}
+  {% assign clothing = "Veste" %}
 {% elsif temp < 18 %}
-  {% assign clothing = "Light jacket" %}
+  {% assign clothing = "Veste légère" %}
 {% else %}
   {% assign clothing = "T-shirt" %}
 {% endif %}
-{% if umbrella %}{% assign clothing = clothing | append: " + Umbrella ☂" %}{% endif %}
+{% if umbrella %}{% assign clothing = clothing | append: " + Parapluie ☂" %}{% endif %}
 
 {% assign sec = "now" | date: "%S" | plus: 0 %}
 {% assign idx = sec | modulo: 2 %}
@@ -33,86 +35,91 @@
   {% assign hello_name = "Mia" %}
 {% endif %}
 
-<!-- OUTER GRID — edit grid-template-areas to reorder zones -->
+<!-- OUTER GRID — 800×480, 2×3 zones of 240×240, 1px dividers, 40px h-margin -->
 <div style="
   font-family: sans-serif;
   display: grid;
-  grid-template-areas: 'date' 'weather' 'family' 'bons-points' 'status';
+  grid-template-columns: 240px 240px 240px;
+  grid-template-rows: 240px 240px;
+  grid-template-areas: 'date weather family' 'bons-points extra status';
   gap: 1px;
+  padding: 0 40px;
   background: #000;
   height: 100vh;
   box-sizing: border-box;
 ">
 
-  <!-- Zone: date -->
-  <div style="grid-area: date; background: #fff; padding: 20px 24px;">
-    <p style="font-size: 13px; margin: 0; text-transform: uppercase; letter-spacing: 2px;">
+  <!-- Zone: date — 240×240 -->
+  <div style="grid-area: date; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
       {{ "now" | date: "%A" }}
     </p>
-    <p style="font-size: 40px; font-weight: bold; margin: 0; line-height: 1.1;">
-      {{ "now" | date: "%B %d" }}
+    <p style="font-size: 40px; font-weight: bold; margin: 0; line-height: 48px;">
+      {{ "now" | date: "%d %B" }}
     </p>
   </div>
 
-  <!-- Zone: weather -->
-  <div style="grid-area: weather; background: #fff; padding: 20px 24px;">
-    <p style="font-size: 13px; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 2px;">Weather · Paris</p>
-    <!-- weather sub-grid: temp+condition left, detail right -->
-    <div style="display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px;">
-      <p style="font-size: 36px; font-weight: bold; margin: 0; line-height: 1.1;">
-        {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
-        <span style="font-size: 20px; font-weight: normal; vertical-align: middle;">
-          {% if source.weather.icon %}{{ source.weather.icon }}{% endif %}
-          {% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}
-        </span>
-      </p>
-      <p style="font-size: 14px; margin: 0; text-align: right;">
-        Max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}<br>
-        {% if temp %}{{ clothing }}{% else %}Weather unavailable{% endif %}
-      </p>
-    </div>
+  <!-- Zone: weather — 240×240 -->
+  <div style="grid-area: weather; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Météo · Paris</p>
+    <p style="font-size: 36px; font-weight: bold; margin: 0 0 8px; line-height: 40px;">
+      {% if temp %}{{ temp }}°C{% else %}--°C{% endif %}
+      <span style="font-size: 20px; font-weight: normal; vertical-align: middle;">
+        {% if source.weather.icon %}{{ source.weather.icon }}{% endif %}
+      </span>
+    </p>
+    <p style="font-size: 14px; margin: 0 0 8px; line-height: 16px;">
+      {% if source.weather.condition %}{{ source.weather.condition }}{% else %}?{% endif %}
+      · max {% if max_temp %}{{ max_temp }}°C{% else %}--°C{% endif %}
+    </p>
+    <p style="font-size: 14px; margin: 0; line-height: 16px;">
+      {% if temp %}{{ clothing }}{% else %}Météo indisponible{% endif %}
+    </p>
   </div>
 
-  <!-- Zone: family -->
-  <div style="grid-area: family; background: #fff; padding: 20px 24px;">
-    <p style="font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 2px;">
-      Hello, {{ hello_name }}!
+  <!-- Zone: family — 240×240 -->
+  <div style="grid-area: family; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
+      Bonjour, {{ hello_name }} !
     </p>
     {% for m in source.family %}
-      <p style="font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px;">
-        <strong style="min-width: 56px;">{{ m.member }}</strong>
+      <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
+        <strong style="font-size: 14px; line-height: 16px; min-width: 56px;">{{ m.member }}</strong>
         <span style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
           {% if m.icons.size > 0 %}
             {% for icon in m.icons %}
-              {% if icon.svg %}{{ icon.svg }}{% elsif icon.text %}<span style="font-size: 13px;">{{ icon.text }}</span>{% endif %}
+              {% if icon.svg %}{{ icon.svg }}{% elsif icon.text %}<span style="font-size: 12px; line-height: 16px;">{{ icon.text }}</span>{% endif %}
             {% endfor %}
           {% else %}
             <span style="opacity: 0.3; font-size: 16px;">—</span>
           {% endif %}
         </span>
-      </p>
+      </div>
     {% endfor %}
   </div>
 
-  <!-- Zone: bons-points -->
-  <div style="grid-area: bons-points; background: #fff; padding: 12px 24px;">
-    <p style="font-size: 13px; margin: 0 0 6px; text-transform: uppercase; letter-spacing: 2px;">Bons Points cette semaine</p>
-    <div style="display: flex; align-items: center; gap: 12px;">
-      <p style="font-size: 40px; font-weight: bold; margin: 0; line-height: 1;">
-        {{ source.bonusPoints }}
-      </p>
-      <div style="flex: 1; background: #eee; height: 12px; border-radius: 6px; overflow: hidden;">
-        {% assign pct = source.bonusPoints | times: 10 %}
-        {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
-        <div style="width: {{ pct }}%; height: 100%; background: #000;"></div>
-      </div>
-      <p style="font-size: 13px; margin: 0; white-space: nowrap;">/ 10</p>
+  <!-- Zone: bons-points — 240×240 -->
+  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Bons Points · semaine</p>
+    <p style="font-size: 40px; font-weight: bold; margin: 0 0 16px; line-height: 48px;">
+      {{ source.bonusPoints }}
+    </p>
+    <div style="background: #eee; height: 16px; border-radius: 8px; overflow: hidden;">
+      {% assign pct = source.bonusPoints | times: 10 %}
+      {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
+      <div style="width: {{ pct }}%; height: 100%; background: #000;"></div>
     </div>
+    <p style="font-size: 12px; margin: 8px 0 0; line-height: 16px; color: #666;">/ 10 points</p>
   </div>
 
-  <!-- Zone: status -->
-  <div style="grid-area: status; background: #fff; padding: 8px 24px;">
-    <p style="font-size: 11px; margin: 0; color: #666;">Updated {{ "now" | date: "%H:%M" }}</p>
+  <!-- Zone: extra — 240×240 (placeholder for future content) -->
+  <div style="grid-area: extra; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">À venir</p>
+  </div>
+
+  <!-- Zone: status — 240×240 -->
+  <div style="grid-area: status; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0; line-height: 16px; color: #666;">Mis à jour {{ "now" | date: "%H:%M" }}</p>
   </div>
 
 </div>

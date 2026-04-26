@@ -11,7 +11,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(ruby *)",
       "Bash(/usr/bin/ruby --version)",
-      "Bash(/usr/bin/ruby *)"
+      "Bash(/usr/bin/ruby *)",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

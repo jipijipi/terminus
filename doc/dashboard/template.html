@@ -115,7 +115,8 @@
   </div>
 
   <!-- Zone: bons-points — 240×240 -->
-  {% assign pct = source.bonusPoints | times: 10 %}
+  {% assign bp_max = 10 %}
+  {% assign pct = source.bonusPoints | times: 100 | divided_by: bp_max %}
   {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
   {% assign filled = 440.0 | times: pct | divided_by: 100 %}
   {% assign offset = 440 | minus: filled %}
@@ -128,7 +129,7 @@
           transform="rotate(-90)"/>
       </g>
       <text transform="translate(80,80)" text-anchor="middle" dy="0.35em" font-size="28" fill="#000">
-        <tspan font-weight="bold">{{ source.bonusPoints }}</tspan><tspan> / 10</tspan>
+        <tspan font-weight="bold">{{ source.bonusPoints }}</tspan><tspan> / {{ bp_max }}</tspan>
       </text>
     </svg>
   </div>

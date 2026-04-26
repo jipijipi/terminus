@@ -190,7 +190,8 @@ const contentRaw = $('Content Item').item.json;
 let content = { type: 'fact', text: '', answer: null };
 if (contentRaw.result) {
   try {
-    const parsed = JSON.parse(contentRaw.result);
+    // Upstash stores the value as a JSON string, so double-parse is needed
+    const parsed = JSON.parse(JSON.parse(contentRaw.result));
     content = { type: parsed.type || 'fact', text: parsed.text || '', answer: parsed.answer || null };
   } catch (e) {}
 }

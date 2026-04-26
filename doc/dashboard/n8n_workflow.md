@@ -45,6 +45,7 @@ next.setDate(next.getDate() + 1);
 return [{ json: {
   timeMin: `${ymd(target)}T00:00:00Z`,
   timeMax: `${ymd(next)}T00:00:00Z`,
+  night_mode,
 } }];
 ```
 
@@ -157,12 +158,7 @@ const WMO_LABEL = {
   95: 'Storm',   96: 'Storm',   99: 'Storm',
 };
 
-// Night mode: true from 05:00 to 23:59 Paris time, false from 00:00 to 04:59
-const parisHour = parseInt(
-  new Date().toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: 'numeric', hour12: false }),
-  10
-);
-const night_mode = parisHour >= 17;
+const { night_mode, timeMin: targetDate } = $('Date Prep').first().json;
 
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').first().json;
@@ -193,12 +189,12 @@ if (weatherRaw.error || !weatherRaw.current) {
 
 // Calendar — extract all-day event icons per member, strictly on the target date
 // Google Calendar returns multi-day events that start before timeMin, so filter by exact date
-const targetDate = $('Date Prep').first().json.timeMin.slice(0, 10);
+const targetDateStr = targetDate.slice(0, 10);
 function memberIcons(nodeName) {
   const raw = $(nodeName).first().json;
   if (raw.error || !raw.items) return [];
   return raw.items
-    .filter(e => e.start && e.start.date === targetDate)
+    .filter(e => e.start && e.start.date === targetDateStr)
     .map(e => {
       const key = Object.keys(icons).find(k => k.toLowerCase() === (e.summary || '').toLowerCase());
       return key ? { svg: icons[key] } : { text: e.summary || '' };
@@ -237,7 +233,6 @@ return [{ json: { weather, family, bonusPoints, random, content, night_mode } }]
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
-Unknown calendar event titles (no matching icon key) are filtered out silently.
 
 ## JSON shape exposed to Terminus
 
@@ -293,7 +288,7 @@ The dashboard has two visual and content modes driven by time of day (Paris time
 | Day | 00:00–16:59 | White background | Today's forecast | Today's events |
 | Night | 17:00–23:59 | Inverted (black bg) | Tomorrow's forecast | Tomorrow's events |
 
-`night_mode` is computed in Dashboard Code and exposed to the Liquid template as `source.night_mode`.
+`night_mode` is computed once in Date Prep (alongside the calendar date range) and read by Dashboard Code, which passes it through to the Liquid template as `source.night_mode`.
 
 ### Visual inversion (Liquid template)
 
@@ -326,10 +321,10 @@ Add this in the `<head>` of the template. The CSS invert is applied before Ferru
 
 ### Testing night mode
 
-To test without waiting for 05:00, temporarily hardcode `night_mode` in Dashboard Code:
+To test without waiting for 17:00, temporarily hardcode `night_mode` in Date Prep's return:
 
 ```js
-const night_mode = true; // remove after testing
+return [{ json: { timeMin: ..., timeMax: ..., night_mode: true } }]; // remove override after testing
 ```
 
 Then trigger the webhook manually and check the generated image in the Terminus UI.

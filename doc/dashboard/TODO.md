@@ -1,5 +1,6 @@
+MAYBES
 - temperature ressentie
-- [x] grid 8px
+- points circle
 - french
 - dark mode
 - day display : breakie - school - teeth - bed

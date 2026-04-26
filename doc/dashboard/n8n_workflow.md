@@ -158,7 +158,10 @@ const family = [
 const upstashRaw = $('Upstash GET').item.json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
-return { weather, family, bonusPoints };
+// Generic random integer 0–999. Liquid derives all random features from it via modulo.
+const random = Math.floor(Math.random() * 1000);
+
+return { weather, family, bonusPoints, random };
 ```
 
 `icons: []` means no events today → Liquid renders `—` placeholder.
@@ -175,7 +178,8 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
     { "member": "Maman",  "icons": ["<svg...>"] },
     { "member": "Papa",   "icons": [] }
   ],
-  "bonusPoints": 4
+  "bonusPoints": 4,
+  "random": 317
 }
 ```
 
@@ -194,6 +198,7 @@ Unknown calendar event titles (no matching icon key) are filtered out silently.
 | Member name | `{{ m.member }}` |
 | Member icons | `{% for icon in m.icons %}{{ icon }}{% endfor %}` |
 | Bons Points count | `{{ source.bonusPoints }}` |
+| Random 0–999 | `{{ source.random }}` — derive with `modulo: N` |
 
 ## Error Handling
 

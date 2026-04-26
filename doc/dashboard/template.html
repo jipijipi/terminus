@@ -27,13 +27,13 @@
 {% endif %}
 {% if umbrella %}{% assign clothing = clothing | append: " + Parapluie ☂" %}{% endif %}
 
-{% assign sec = "now" | date: "%S" | plus: 0 %}
-{% assign idx = sec | modulo: 2 %}
-{% if idx == 0 %}
+{% assign name_idx = source.random | modulo: 2 %}
+{% if name_idx == 0 %}
   {% assign hello_name = "Ulysse" %}
 {% else %}
   {% assign hello_name = "Mia" %}
 {% endif %}
+{% assign wheel_angle = source.random | modulo: 8 | times: 45 %}
 
 <!-- OUTER GRID — 800×480, 2×3 zones of 240×240, 1px dividers, 40px h-margin -->
 <div style="

@@ -121,16 +121,19 @@ return { idx };
 - Returns: `{ "result": "{\"type\":\"joke\",\"text\":\"...\"}" }` — result is a JSON string
 
 ### 8. Merge node
-- Mode: `Combine` → `Combine by position`
+- Mode: `Append`
 - Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET + Content Item (9 total)
 - Ensures all branches have executed before Dashboard Code runs
+- **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
 ### 9. Dashboard Code node (Code)
+
+- **Mode: `Run once for all items`** — required because Merge Final outputs one item per branch. In per-item mode n8n tries to pair each item back to its source node and fails. In all-items mode the node runs once and references upstream nodes directly by name with `.first().json`.
 
 References all original nodes by name (not Merge).
 
 ```js
-const icons = $('Icon Library').item.json;
+const icons = $('Icon Library').first().json;
 
 // WMO weather code → icon key (matches assets/icons/*.svg filenames)
 const WMO_ICON = {
@@ -160,7 +163,7 @@ const parisHour = parseInt(
 const night_mode = parisHour >= 5;
 
 // Weather — defensive against API errors and network failures
-const weatherRaw = $('Weather Request').item.json;
+const weatherRaw = $('Weather Request').first().json;
 let weather;
 if (weatherRaw.error || !weatherRaw.current) {
   weather = {
@@ -188,7 +191,7 @@ if (weatherRaw.error || !weatherRaw.current) {
 
 // Calendar — extract all-day event icons per member
 function memberIcons(nodeName) {
-  const raw = $(nodeName).item.json;
+  const raw = $(nodeName).first().json;
   if (raw.error || !raw.items) return [];
   return raw.items
     .filter(e => e.start && e.start.date && !e.start.dateTime)
@@ -209,14 +212,14 @@ const family = [
 ];
 
 // Bons Points — read from Upstash GET node
-const upstashRaw = $('Upstash GET').item.json;
+const upstashRaw = $('Upstash GET').first().json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
 // Generic random integer 0–999. Liquid derives all random features from it via modulo.
 const random = Math.floor(Math.random() * 1000);
 
 // Content (jokes, facts, quizzes) — fetched from Redis list by Content Item node
-const contentRaw = $('Content Item').item.json;
+const contentRaw = $('Content Item').first().json;
 let content = { type: 'fact', text: '', answer: null };
 if (contentRaw.result) {
   try {
@@ -226,7 +229,7 @@ if (contentRaw.result) {
   } catch (e) {}
 }
 
-return { weather, family, bonusPoints, random, content, night_mode };
+return [{ json: { weather, family, bonusPoints, random, content, night_mode } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.

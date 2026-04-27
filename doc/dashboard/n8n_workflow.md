@@ -242,7 +242,11 @@ const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
 // Task alternation — derives today's owner from anchor date + stored owner
 let bedData = { owner: 'mom', anchor: targetDateStr };
-try { bedData = JSON.parse($('Upstash GET bed').first().json?.result ?? '{}'); } catch (e) {}
+try {
+  let raw = $('Upstash GET bed').first().json?.result ?? '{}';
+  if (raw.startsWith('"')) raw = JSON.parse(raw);
+  bedData = JSON.parse(raw);
+} catch (e) {}
 const { owner: bedOwner = 'mom', anchor: bedAnchorDate = targetDateStr } = bedData;
 const anchor = new Date(bedAnchorDate);
 const target = new Date(targetDateStr);
@@ -437,19 +441,15 @@ const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayStr = ymd(now);
 
-let bedData = { owner: 'mom', anchor: todayStr };
-try { bedData = JSON.parse($('Upstash GET bed').first().json?.result ?? '{}'); } catch (e) {}
-const { owner: bedOwner = 'mom', anchor: bedAnchorDate = todayStr } = bedData;
-
-const anchor = new Date(bedAnchorDate);
-const today = new Date(todayStr);
-const dayDiff = Math.round((today - anchor) / 86400000);
-const currentOwner = dayDiff % 2 === 0 ? bedOwner : (bedOwner === 'mom' ? 'dad' : 'mom');
-const newOwner = currentOwner === 'mom' ? 'dad' : 'mom';
+const raw = $('Upstash GET bed').first().json.result;
+const bedData = JSON.parse(raw);
+const newOwner = bedData.owner === 'mom' ? 'dad' : 'mom';
 const newValue = JSON.stringify({ owner: newOwner, anchor: todayStr });
 
 return [{ json: { newOwner, newValue } }];
 ```
+
+> **If repeated toggles return the same result**, the cause is n8n caching the Upstash GET response across executions. Fix: open the Upstash GET bed node → Settings tab → disable **"Execute Once"** if enabled. Also ensure the workflow uses **"Execute Workflow"** trigger mode, not a cached test execution. Alternatively, add a dummy query param to bust caching: append `?t={{ Date.now() }}` to the GET URL.
 
 - **Upstash SET bed** (HTTP Request):
   - Method: `POST`

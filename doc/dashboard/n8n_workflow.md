@@ -453,12 +453,12 @@ return [{ json: { newOwner, newValue } }];
 
 - **Upstash SET bed** (HTTP Request):
   - Method: `POST`
-  - URL: `https://YOUR_UPSTASH_HOST/set/bed`
-  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`, `Content-Type: application/json`
-  - Body (JSON): `{ "value": "{{ $json.newValue }}" }`
+  - URL (expression): `https://YOUR_UPSTASH_HOST/set/bed/{{ encodeURIComponent($json.newValue) }}`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+  - Send Body: off
 
 - **Respond to Webhook**:
-  - Body: `Corvée → {{ $('Code').item.json.newOwner }}`
+  - Body: `Bedtime → {{ $('Code').item.json.newOwner }}`
   - MIME type: `text/plain`
 
 **Phone bookmark:** `https://YOUR_N8N_HOST/webhook/bed-toggle`

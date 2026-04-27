@@ -17,7 +17,8 @@
       "Read(//tmp/**)",
       "Bash(xargs -I {} basename {})",
       "Bash(grep -E \"\\\\.\\(css|html|md\\)$\")",
-      "Bash(RBENV_VERSION=system ruby *)"
+      "Bash(RBENV_VERSION=system ruby *)",
+      "Bash(curl *)"
     ]
   }
 }

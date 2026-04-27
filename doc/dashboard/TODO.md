@@ -1,35 +1,29 @@
-
-
-### Weather
-
-Day mode
-    small label : maintenant
-    In big : Current condition (icon) Current temperature (X°)
-    Small underneath : Feels like (X°)
-
-    small label : aujourd'hui
-    In big : Worst condition for the day (icon) Max temp for the day (X°)
-    Small underneath :
-    Max feels like (X°)
-
-Night mode
-    small label : maintenant
-    In big : Current condition (icon) Current temperature (X°)
-    Small underneath : Feels like (X°)
-
-    small label : demain
-    In big : Worst condition for tomorrow (icon) Max temp for tomorrow (X°)
-    Small underneath :
-    Max feels like for tomorrow (X°)
-
-
 ## Backlog
 
-- New font  
+- Clothing
 - French locale
-- Day display : breakie - school - teeth - bed
-- Invader
 - Fly.io deploy
+- Invader
 - Intense refresh
 - Firmware update
 - Bedtime schedule
+- Day display : breakie - school - teeth - bed
+
+## Clothing
+
+Head
+    bonnet
+    capuche
+    casquette
+    head
+Top
+    tshirt
+    pull
+    manteau
+Bottom
+    pantalon
+    short
+Shoes
+    tongs
+    baskets
+    bottes

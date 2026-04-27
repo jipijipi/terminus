@@ -11,7 +11,8 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
                     └──► Papa Calendar ────┤
 Webhook → Icon Library ────────────────────┤
 Webhook → Weather Request ─────────────────┤
-Webhook → Upstash GET ─────────────────────┤
+Webhook → Upstash GET (bonusPoints) ───────┤
+Webhook → Upstash GET bed ────────────────┤
 Webhook → Content Length ──► Content Index ──► Content Item ──┴──► Merge ──► Dashboard Code
 ```
 
@@ -100,7 +101,26 @@ Enable **"Continue on error"** (Settings tab).
 
 Upstash REST API returns `{ "result": "4" }` — the value is a string, coerced to int in Dashboard Code.
 
-### 7. Content nodes (×3)
+### 7. Upstash GET bed node (HTTP Request)
+
+One additional Upstash GET node, wired in parallel with the bonusPoints node. Enable **"Continue on error"**.
+
+- Method: `GET`
+- URL: `https://YOUR_UPSTASH_HOST/get/bed`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": "{\"owner\":\"mom\",\"anchor\":\"2026-04-27\"}" }`
+
+The value is a JSON string — parse it in Dashboard Code.
+
+**One-time Redis setup** (Upstash console or curl):
+```bash
+curl -X POST https://YOUR_UPSTASH_HOST/set/bed/%7B%22owner%22%3A%22mom%22%2C%22anchor%22%3A%222026-04-27%22%7D \
+  -H "Authorization: Bearer YOUR_UPSTASH_TOKEN"
+```
+
+Or set it directly in the Upstash console Data Browser: key `bed`, value `{"owner":"mom","anchor":"2026-04-27"}`.
+
+### 8. Content nodes (×3)
 
 Fetch a random item from the `content` Redis list. Chain: Content Length → Content Index → Content Item.
 
@@ -123,13 +143,13 @@ return { idx };
 - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
 - Returns: `{ "result": "{\"type\":\"joke\",\"text\":\"...\"}" }` — result is a JSON string
 
-### 8. Merge node
+### 9. Merge node
 - Mode: `Append`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET + Content Item (9 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET bed + Content Item (10 total)
 - Ensures all branches have executed before Dashboard Code runs
 - **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
-### 9. Dashboard Code node (Code)
+### 10. Dashboard Code node (Code)
 
 - **Mode: `Run once for all items`** — required because Merge Final outputs one item per branch. In per-item mode n8n tries to pair each item back to its source node and fails. In all-items mode the node runs once and references upstream nodes directly by name with `.first().json`.
 
@@ -220,6 +240,15 @@ const family = [
 const upstashRaw = $('Upstash GET').first().json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
+// Task alternation — derives today's owner from anchor date + stored owner
+let bedData = { owner: 'mom', anchor: targetDateStr };
+try { bedData = JSON.parse($('Upstash GET bed').first().json?.result ?? '{}'); } catch (e) {}
+const { owner: bedOwner = 'mom', anchor: bedAnchorDate = targetDateStr } = bedData;
+const anchor = new Date(bedAnchorDate);
+const target = new Date(targetDateStr);
+const dayDiff = Math.round((target - anchor) / 86400000);
+const bed = dayDiff % 2 === 0 ? bedOwner : (bedOwner === 'mom' ? 'dad' : 'mom');
+
 // Generic random integer 0–999. Liquid derives all random features from it via modulo.
 const random = Math.floor(Math.random() * 1000);
 
@@ -234,7 +263,7 @@ if (contentRaw.result) {
   } catch (e) {}
 }
 
-return [{ json: { weather, family, bonusPoints, random, content, night_mode } }];
+return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
@@ -256,6 +285,7 @@ return [{ json: { weather, family, bonusPoints, random, content, night_mode } }]
     { "member": "Papa",   "icons": [] }
   ],
   "bonusPoints": 4,
+  "bed": "mom",
   "random": 317,
   "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
   "night_mode": true
@@ -284,6 +314,7 @@ return [{ json: { weather, family, bonusPoints, random, content, night_mode } }]
 | Member name | `{{ m.member }}` |
 | Member icons | `{% for icon in m.icons %}{{ icon.svg }}{% endfor %}` |
 | Bons Points count | `{{ source.bonusPoints }}` |
+| Task owner | `{{ source.bed }}` — `"mom"` or `"dad"` |
 | Random 0–999 | `{{ source.random }}` — derive with `modulo: N` |
 | Content type | `{{ source.content.type }}` — `joke`, `fact`, or `quiz` |
 | Content text | `{{ source.content.text }}` |
@@ -382,6 +413,57 @@ curl -X POST https://YOUR_UPSTASH_HOST/rpush/content \
 **View all items:** Upstash console → Data Browser → key `content`
 
 **Remove an item:** use `LREM` or edit directly in the console.
+
+## Task Toggle
+
+A separate n8n workflow to manually flip today's bed owner when there's a scheduling conflict. Tomorrow will still auto-flip from the new anchor, so the alternating schedule self-corrects.
+
+```
+Webhook (GET /webhook/bed-toggle)
+  → Upstash GET bed
+  → Code (compute today's owner, flip it)
+  → Upstash SET bed
+  → Respond to Webhook
+```
+
+- **Webhook**: GET, path `bed-toggle`, response mode `Using Respond to Webhook node`
+
+- **Upstash GET bed**: same config as in the main workflow
+
+- **Code node** (`Run once for all items`):
+```js
+const now = new Date();
+const pad = n => String(n).padStart(2, '0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const todayStr = ymd(now);
+
+let bedData = { owner: 'mom', anchor: todayStr };
+try { bedData = JSON.parse($('Upstash GET bed').first().json?.result ?? '{}'); } catch (e) {}
+const { owner: bedOwner = 'mom', anchor: bedAnchorDate = todayStr } = bedData;
+
+const anchor = new Date(bedAnchorDate);
+const today = new Date(todayStr);
+const dayDiff = Math.round((today - anchor) / 86400000);
+const currentOwner = dayDiff % 2 === 0 ? bedOwner : (bedOwner === 'mom' ? 'dad' : 'mom');
+const newOwner = currentOwner === 'mom' ? 'dad' : 'mom';
+const newValue = JSON.stringify({ owner: newOwner, anchor: todayStr });
+
+return [{ json: { newOwner, newValue } }];
+```
+
+- **Upstash SET bed** (HTTP Request):
+  - Method: `POST`
+  - URL: `https://YOUR_UPSTASH_HOST/set/bed`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`, `Content-Type: application/json`
+  - Body (JSON): `{ "value": "{{ $json.newValue }}" }`
+
+- **Respond to Webhook**:
+  - Body: `Corvée → {{ $('Code').item.json.newOwner }}`
+  - MIME type: `text/plain`
+
+**Phone bookmark:** `https://YOUR_N8N_HOST/webhook/bed-toggle`
+
+Tapping this link flips today's assignment. The anchor resets to today, so tomorrow auto-flips to the other person again — no manual correction needed the next day.
 
 ## Bons Points Counter
 

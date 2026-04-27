@@ -75,8 +75,11 @@
 
   <!-- Zone: family — 240×240 -->
   <div style="grid-area: family; background: #fff; padding: 16px; overflow: hidden;">
-    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
+    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
       {% if night_mode %}Demain · {% else %}Aujourd'hui · {% endif %}{{ hello_name }} !
+    </p>
+    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
+      💤⏾ · {% if source.bed == 'mom' %}Maman{% else %}Papa{% endif %}
     </p>
     {% for m in source.family %}
       <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">

@@ -12,7 +12,7 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
 Webhook → Icon Library ────────────────────┤
 Webhook → Weather Request ─────────────────┤
 Webhook → Upstash GET (bonusPoints) ───────┤
-Webhook → Upstash GET bed ────────────────┤
+Webhook → Upstash GET Bed ────────────────┤
 Webhook → Content Length ──► Content Index ──► Content Item ──┴──► Merge ──► Dashboard Code
 ```
 
@@ -101,7 +101,7 @@ Enable **"Continue on error"** (Settings tab).
 
 Upstash REST API returns `{ "result": "4" }` — the value is a string, coerced to int in Dashboard Code.
 
-### 7. Upstash GET bed node (HTTP Request)
+### 7. Upstash GET Bed node (HTTP Request)
 
 One additional Upstash GET node, wired in parallel with the bonusPoints node. Enable **"Continue on error"**.
 
@@ -145,7 +145,7 @@ return { idx };
 
 ### 9. Merge node
 - Mode: `Append`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET bed + Content Item (10 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Content Item (10 total)
 - Ensures all branches have executed before Dashboard Code runs
 - **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
@@ -240,18 +240,10 @@ const family = [
 const upstashRaw = $('Upstash GET').first().json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
-// Task alternation — derives today's owner from anchor date + stored owner
-let bedData = { owner: 'mom', anchor: targetDateStr };
-try {
-  let raw = $('Upstash GET bed').first().json?.result ?? '{}';
-  if (raw.startsWith('"')) raw = JSON.parse(raw);
-  bedData = JSON.parse(raw);
-} catch (e) {}
-const { owner: bedOwner = 'mom', anchor: bedAnchorDate = targetDateStr } = bedData;
-const anchor = new Date(bedAnchorDate);
-const target = new Date(targetDateStr);
-const dayDiff = Math.round((target - anchor) / 86400000);
-const bed = dayDiff % 2 === 0 ? bedOwner : (bedOwner === 'mom' ? 'dad' : 'mom');
+// Bed alternation — derives today's owner from anchor date + stored owner
+const bedData = JSON.parse($('Upstash GET Bed').first().json.result);
+const dayDiff = Math.round((new Date(targetDateStr) - new Date(bedData.anchor)) / 86400000);
+const bed = dayDiff % 2 === 0 ? bedData.owner : (bedData.owner === 'mom' ? 'dad' : 'mom');
 
 // Generic random integer 0–999. Liquid derives all random features from it via modulo.
 const random = Math.floor(Math.random() * 1000);
@@ -424,15 +416,15 @@ A separate n8n workflow to manually flip today's bed owner when there's a schedu
 
 ```
 Webhook (GET /webhook/bed-toggle)
-  → Upstash GET bed
+  → Upstash GET Bed
   → Code (compute today's owner, flip it)
-  → Upstash SET bed
+  → Upstash SET Bed
   → Respond to Webhook
 ```
 
 - **Webhook**: GET, path `bed-toggle`, response mode `Using Respond to Webhook node`
 
-- **Upstash GET bed**: same config as in the main workflow
+- **Upstash GET Bed**: same config as in the main workflow
 
 - **Code node** (`Run once for all items`):
 ```js
@@ -441,7 +433,7 @@ const pad = n => String(n).padStart(2, '0');
 const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const todayStr = ymd(now);
 
-const raw = $('Upstash GET bed').first().json.result;
+const raw = $('Upstash GET Bed').first().json.result;
 const bedData = JSON.parse(raw);
 const newOwner = bedData.owner === 'mom' ? 'dad' : 'mom';
 const newValue = JSON.stringify({ owner: newOwner, anchor: todayStr });
@@ -449,9 +441,9 @@ const newValue = JSON.stringify({ owner: newOwner, anchor: todayStr });
 return [{ json: { newOwner, newValue } }];
 ```
 
-> **If repeated toggles return the same result**, the cause is n8n caching the Upstash GET response across executions. Fix: open the Upstash GET bed node → Settings tab → disable **"Execute Once"** if enabled. Also ensure the workflow uses **"Execute Workflow"** trigger mode, not a cached test execution. Alternatively, add a dummy query param to bust caching: append `?t={{ Date.now() }}` to the GET URL.
+> **If repeated toggles return the same result**, the cause is n8n caching the Upstash GET response across executions. Fix: open the Upstash GET Bed node → Settings tab → disable **"Execute Once"** if enabled. Also ensure the workflow uses **"Execute Workflow"** trigger mode, not a cached test execution. Alternatively, add a dummy query param to bust caching: append `?t={{ Date.now() }}` to the GET URL.
 
-- **Upstash SET bed** (HTTP Request):
+- **Upstash SET Bed** (HTTP Request):
   - Method: `POST`
   - URL (expression): `https://YOUR_UPSTASH_HOST/set/bed/{{ encodeURIComponent($json.newValue) }}`
   - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`

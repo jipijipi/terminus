@@ -12,7 +12,8 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
 Webhook → Icon Library ────────────────────┤
 Webhook → Weather Request ─────────────────┤
 Webhook → Upstash GET (bonusPoints) ───────┤
-Webhook → Upstash GET Bed ────────────────┤
+Webhook → Upstash GET Bed ─────────────────┤
+Webhook → Upstash HKEYS Invader ──► Invader Key ──► Upstash HGET Invader ──┤
 Webhook → Content Length ──► Content Index ──► Content Item ──┴──► Merge ──► Dashboard Code
 ```
 
@@ -143,13 +144,53 @@ return { idx };
 - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
 - Returns: `{ "result": "{\"type\":\"joke\",\"text\":\"...\"}" }` — result is a JSON string
 
-### 9. Merge node
+### 9. Invader nodes (×3)
+
+Fetch a random sprite from the `invader:designs` hash. Chain: Upstash HKEYS Invader → Invader Key → Upstash HGET Invader.
+
+Only the one selected sprite crosses the wire — efficient with ~100 designs.
+
+**Upstash HKEYS Invader** (HTTP Request, "Continue on error"):
+- Method: `GET`
+- URL: `https://square-beetle-87753.upstash.io/hkeys/invader:designs`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": ["key1", "key2", ...] }`
+
+**Invader Key** (Code):
+```js
+const keys = $('Upstash HKEYS Invader').first().json.result || [];
+const key = keys.length > 0 ? keys[Math.floor(Math.random() * keys.length)] : null;
+return [{ json: { key } }];
+```
+
+**Upstash HGET Invader** (HTTP Request, "Continue on error"):
+- Method: `GET`
+- URL (expression): `https://square-beetle-87753.upstash.io/hget/invader:designs/{{ $('Invader Key').item.json.key }}`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": "{\"w\":16,\"h\":16,\"pixels\":\"...\"}" }` — a JSON string
+
+**Sprite format** — each hash value is a JSON string (schema version 2):
+```json
+{"schemaVersion":2,"id":"...","name":"3","rows":13,"cols":13,"data":["0000000000000","0001011101000",...],"format":"INVADER1"}
+```
+- `rows`, `cols`: sprite dimensions (max 24×24)
+- `data`: array of strings, one per row, each char `0` (transparent) or `1` (black)
+
+**Add a sprite** (Upstash console CLI or curl):
+```bash
+curl -X POST https://square-beetle-87753.upstash.io/hset/invader:designs/mysprite \
+  -H "Authorization: Bearer YOUR_UPSTASH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '["{\"w\":8,\"h\":8,\"pixels\":\"0110011010011001011001101001100101100110100110010110011010011001\"}"]'
+```
+
+### 10. Merge node
 - Mode: `Append`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Content Item (10 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Upstash HGET Invader + Content Item (11 total)
 - Ensures all branches have executed before Dashboard Code runs
 - **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
-### 10. Dashboard Code node (Code)
+### 11. Dashboard Code node (Code)
 
 - **Mode: `Run once for all items`** — required because Merge Final outputs one item per branch. In per-item mode n8n tries to pair each item back to its source node and fails. In all-items mode the node runs once and references upstream nodes directly by name with `.first().json`.
 
@@ -259,7 +300,31 @@ if (contentRaw.result) {
   } catch (e) {}
 }
 
-return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode } }];
+// Invader — pick a random pixel art design from the hash
+function buildInvaderSvg(raw) {
+  if (!raw) return null;
+  try {
+    const { rows, cols, data } = JSON.parse(raw);
+    const scale = Math.floor(96 / Math.max(rows, cols));
+    const rects = [];
+    for (let r = 0; r < data.length; r++) {
+      for (let c = 0; c < data[r].length; c++) {
+        if (data[r][c] === '1') {
+          rects.push(`<rect x="${c * scale}" y="${r * scale}" width="${scale}" height="${scale}" fill="#000"/>`);
+        }
+      }
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">${rects.join('')}</svg>`;
+  } catch (e) { return null; }
+}
+
+let invader = null;
+try {
+  const raw = $('Upstash HGET Invader').first().json.result;
+  if (raw) invader = buildInvaderSvg(raw);
+} catch (e) {}
+
+return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
@@ -284,7 +349,8 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
   "bed": "mom",
   "random": 317,
   "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
-  "night_mode": true
+  "night_mode": true,
+  "invader": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\" viewBox=\"0 0 96 96\">...</svg>"
 }
 ```
 
@@ -315,6 +381,7 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
 | Content type | `{{ source.content.type }}` — `joke`, `fact`, or `quiz` |
 | Content text | `{{ source.content.text }}` |
 | Content answer | `{{ source.content.answer }}` — present only for quizzes |
+| Pixel art sprite | `{{ source.invader }}` — inline SVG string, or `null` if hash is empty |
 
 ## Day/Night Mode
 

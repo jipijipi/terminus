@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" width="56" height="48" viewBox="0 0 56 48">
+  <path d="M17,12l-4.8,7.8,4.8,7.2v-15Z" fill-rule="evenodd"/>
+  <path d="M39,12v15l4.8-7.2-4.8-7.8Z" fill-rule="evenodd"/>
+  <path d="M42,2h-5V0h-18v2h-5L3,20l12,15.7v12.3h26v-12.3l12-15.7L42,2ZM5.4,19.9L15.1,4h3.9l3,3.3v10.7h2v-8.4l3,3.3v33.1h-10v-11l-11.6-15.1ZM39,35v11h-10V12.9l3-3.3v8.4h2V7.3l3-3.3h3.9l9.7,15.9-11.6,15.1Z" fill-rule="evenodd"/>
+  <rect x="19" y="37" width="6" height="2"/>
+  <rect x="31" y="37" width="6" height="2"/>
+  <rect x="32" y="24" width="2" height="2"/>
+  <rect x="32" y="30" width="2" height="2"/>
+  <rect x="22" y="24" width="2" height="2"/>
+  <rect x="22" y="30" width="2" height="2"/>
+</svg>

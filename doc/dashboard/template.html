@@ -108,8 +108,8 @@
   {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
   {% assign filled = 440.0 | times: pct | divided_by: 100 %}
   {% assign offset = 440 | minus: filled %}
-  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-    <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Bons Points</p>
+  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden;">
+    <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Bons Points</p>
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
       <g transform="translate(80,80)">
         <circle r="70" fill="none" stroke="#000" stroke-width="2"/>

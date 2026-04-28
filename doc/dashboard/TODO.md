@@ -12,18 +12,18 @@
 ## Clothing
 
 Head
-    bonnet
-    capuche
-    casquette
-    head
+    bonnet - cold
+capuche - rain
+    casquette - hot & sunny
+    head - default
 Top
-    tshirt
-    pull
-    manteau
+    tshirt - hot
+pull - default
+manteau - cold
 Bottom
-    pantalon
-    short
+    pantalon - default
+short - hot
 Shoes
-    tongs
-    baskets
-    bottes
+    tongs - hot
+    baskets - default
+    bottes - rain

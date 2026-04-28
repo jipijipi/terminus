@@ -7,8 +7,15 @@
 
 {% assign night_mode = source.night_mode %}
 
-
 {% assign wheel_angle = source.random | modulo: 8 | times: 45 %}
+
+{% assign fr_days   = "Lundi,Mardi,Mercredi,Jeudi,Vendredi,Samedi,Dimanche" | split: "," %}
+{% assign fr_months = "janvier,février,mars,avril,mai,juin,juillet,août,septembre,octobre,novembre,décembre" | split: "," %}
+{% assign dow = "now" | date: "%u" | minus: 1 %}
+{% assign mon = "now" | date: "%-m" | minus: 1 %}
+{% assign fr_day   = fr_days[dow] %}
+{% assign fr_month = fr_months[mon] %}
+{% assign day_num  = "now" | date: "%-d" %}
 
 {% if night_mode %}<style>html { background: #000; } body { filter: invert(1); }</style>{% endif %}
 
@@ -34,10 +41,10 @@
   <div style="grid-area: date; background: #fff; padding: 16px; overflow: hidden; border-bottom: 1px solid #000; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
     <div style="text-align: center;">
       <p style="font-size: 11px; margin: 0 0 4px; line-height: 14px; text-transform: uppercase; letter-spacing: 2px;">
-        {{ "now" | date: "%A" }}
+        {{ fr_day }}
       </p>
       <p style="font-size: 28px; font-weight: bold; margin: 0 0 4px; line-height: 34px;">
-        {{ "now" | date: "%d %B" }}
+        {{ day_num }} {{ fr_month }}
       </p>
       <p style="font-size: 14px; margin: 0; line-height: 16px;">{{ "now" | date: "%H:%M" }}</p>
     </div>
@@ -88,7 +95,7 @@
     </p>
     {% for m in source.family %}
       <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
-        <strong style="font-size: 14px; line-height: 16px; min-width: 56px;">{{ m.member }}</strong>
+        <strong style="font-size: 14px; line-height: 16px; width: 64px; flex-shrink: 0;">{{ m.member }}</strong>
         <span style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
           {% if m.icons.size > 0 %}
             {% for icon in m.icons %}

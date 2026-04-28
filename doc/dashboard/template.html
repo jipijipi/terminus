@@ -8,12 +8,6 @@
 {% assign night_mode = source.night_mode %}
 
 
-{% assign name_idx = source.random | modulo: 2 %}
-{% if name_idx == 0 %}
-  {% assign hello_name = "Ulysse" %}
-{% else %}
-  {% assign hello_name = "Mia" %}
-{% endif %}
 {% assign wheel_angle = source.random | modulo: 8 | times: 45 %}
 
 {% if night_mode %}<style>html { background: #000; } body { filter: invert(1); }</style>{% endif %}
@@ -37,14 +31,15 @@
 ">
 
   <!-- Zone: date — 240×240 -->
-  <div style="grid-area: date; background: #fff; padding: 16px; overflow: hidden; border-bottom: 1px solid #000; display: flex; flex-direction: column; justify-content: space-between;">
-    <div>
+  <div style="grid-area: date; background: #fff; padding: 16px; overflow: hidden; border-bottom: 1px solid #000; display: flex; flex-direction: column; align-items: center; justify-content: space-between;">
+    <div style="text-align: center;">
       <p style="font-size: 11px; margin: 0 0 4px; line-height: 14px; text-transform: uppercase; letter-spacing: 2px;">
         {{ "now" | date: "%A" }}
       </p>
-      <p style="font-size: 28px; font-weight: bold; margin: 0; line-height: 34px;">
+      <p style="font-size: 28px; font-weight: bold; margin: 0 0 4px; line-height: 34px;">
         {{ "now" | date: "%d %B" }}
       </p>
+      <p style="font-size: 14px; margin: 0; line-height: 16px;">{{ "now" | date: "%H:%M" }}</p>
     </div>
     {% if source.invader %}
     <div style="display: flex; justify-content: center; align-items: center;">
@@ -88,8 +83,8 @@
 
   <!-- Zone: family — 240×240 -->
   <div style="grid-area: family; background: #fff; padding: 16px; overflow: hidden;">
-    <p style="font-size: 12px; margin: 0 0 4px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
-      {% if night_mode %}Demain · {% else %}Aujourd'hui · {% endif %}{{ hello_name }} !
+    <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">
+      {% if night_mode %}Demain{% else %}Aujourd'hui{% endif %}
     </p>
     {% for m in source.family %}
       <div style="display: flex; align-items: center; gap: 8px; margin: 0 0 8px;">
@@ -132,7 +127,7 @@
   <div style="grid-area: wheel; background: #fff; overflow: hidden; border-bottom: 1px solid #000; display: flex; flex-direction: row;">
 
     <!-- Clothes column -->
-    <div style="width: 56px; flex-shrink: 0; padding: 16px 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; border-right: 1px solid #000;">
+    <div style="width: 56px; flex-shrink: 0; padding: 16px 8px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; border-right: 1px solid #000;">
       {% if source.clothes.hat %}{{ source.clothes.hat }}{% endif %}
       {% if source.clothes.top %}{{ source.clothes.top }}{% endif %}
       {% if source.clothes.bottom %}{{ source.clothes.bottom }}{% endif %}
@@ -173,9 +168,9 @@
       {% else %}
         <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Le savais-tu ?</p>
       {% endif %}
-      <p style="font-size: 14px; margin: 0 0 16px; line-height: 16px;">{{ source.content.text }}</p>
+      <p style="font-size: 16px; margin: 0 0 16px; line-height: 20px;">{{ source.content.text }}</p>
       {% if source.content.answer %}
-        <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px;">→ {{ source.content.answer }}</p>
+        <p style="font-size: 16px; margin: 0; line-height: 20px; margin-top: -4px;">→ {{ source.content.answer }}</p>
       {% endif %}
     </div>
     <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px;">{{ "now" | date: "%H:%M" }}</p>

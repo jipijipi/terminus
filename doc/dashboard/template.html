@@ -115,10 +115,10 @@
   {% if pct > 100 %}{% assign pct = 100 %}{% endif %}
   {% assign filled = 440.0 | times: pct | divided_by: 100 %}
   {% assign offset = 440 | minus: filled %}
-  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column;">
+  <div style="grid-area: bons-points; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; text-align: center;">
     <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Bons Points</p>
-    <div style="width: 176px; height: 176px;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="176" height="176">
+    <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160">
         <g transform="translate(80,80)">
           <circle r="70" fill="none" stroke="#000" stroke-width="2"/>
           <circle r="70" fill="none" stroke="#000" stroke-width="10" stroke-linecap="round"
@@ -132,7 +132,7 @@
           <path d="M83.5,83.5v21.1h14c2.9,0,5.3-2.4,5.3-5.3v-15.8h-19.3Z"/>
           <path d="M90.7,55.4c-5-.2-9.4,3.1-10.7,7.9-1.6-8.8-17.2-11.7-17.6-.9-.7,3.9,2.8,7.5,6.7,7h21.5c4,.7,7.7-3,7-7,0-3.9-3.1-7-7-7ZM69.5,66c-2,.2-3.7-1.5-3.5-3.5.6-7.3,11.3-2.1,10.5,3.5h-7ZM91.1,66s-7.4,0-7.6,0c-.5-5.8,9.5-10.6,10.5-3.5.2,1.8-1.1,3.3-2.9,3.5Z"/>
         {% else %}
-          <text x="80" y="80" text-anchor="middle" dy="0.35em" style="font-size: 72px; font-weight: bold;" fill="#000">{{ source.bonusPoints }}</text>
+          <text x="80" y="80" text-anchor="middle" dy="0.35em" style="font-size: 72px; font-weight: bold; text-anchor: middle;" fill="#000">{{ source.bonusPoints }}</text>
         {% endif %}
       </svg>
     </div>

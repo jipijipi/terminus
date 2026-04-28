@@ -159,21 +159,18 @@
   </div>
 
   <!-- Zone: content — 240×240 (jokes, facts, quizzes from Redis) -->
-  <div style="grid-area: content; background: #fff; padding: 16px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;">
-    <div>
-      {% if source.content.type == 'joke' %}
-        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Blague</p>
-      {% elsif source.content.type == 'quiz' %}
-        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Quiz</p>
-      {% else %}
-        <p style="font-size: 12px; margin: 0 0 8px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Le savais-tu ?</p>
-      {% endif %}
-      <p style="font-size: 16px; margin: 0 0 16px; line-height: 20px;">{{ source.content.text }}</p>
-      {% if source.content.answer %}
-        <p style="font-size: 16px; margin: 0; line-height: 20px; margin-top: -4px;">→ {{ source.content.answer }}</p>
-      {% endif %}
-    </div>
-    <p style="font-size: 14px; margin: 0; line-height: 16px; margin-top: -4px;">{{ "now" | date: "%H:%M" }}</p>
+  <div style="grid-area: content; background: #fff; padding: 16px; overflow: hidden;">
+    {% if source.content.type == 'joke' %}
+      <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Blague</p>
+    {% elsif source.content.type == 'quiz' %}
+      <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Quiz</p>
+    {% else %}
+      <p style="font-size: 12px; margin: 0 0 16px; line-height: 16px; text-transform: uppercase; letter-spacing: 2px;">Le savais-tu ?</p>
+    {% endif %}
+    <p style="font-size: 16px; margin: 0 0 16px; line-height: 20px;">{{ source.content.text }}</p>
+    {% if source.content.answer %}
+      <p style="font-size: 16px; margin: 0; line-height: 20px;">→ {{ source.content.answer }}</p>
+    {% endif %}
   </div>
 
 </div>

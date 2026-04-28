@@ -2,9 +2,7 @@
 
 - Clothing
 - French locale
-- Fly.io deploy
-- Invader
+- VPS deploy
 - Intense refresh
 - Firmware update
-- Bedtime schedule
 - Day display : breakie - school - teeth - bed

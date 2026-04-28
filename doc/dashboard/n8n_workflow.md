@@ -10,6 +10,7 @@ Webhook → Date Prep ──► Ulysse Calendar ──┐
                     ├──► Maman Calendar ───┤
                     └──► Papa Calendar ────┤
 Webhook → Icon Library ────────────────────┤
+Webhook → Clothes Library ─────────────────┤
 Webhook → Weather Request ─────────────────┤
 Webhook → Upstash GET (bonusPoints) ───────┤
 Webhook → Upstash GET Bed ─────────────────┤
@@ -64,6 +65,23 @@ No inputs. Returns a flat map of `{ name: svgString }`.
 Output: `doc/dashboard/icon_library.js` — paste its contents into this Code node.
 
 Weather icon keys (`sun`, `cloud`, `rain`, `snow`, `storm`, `moon`) are looked up by the Dashboard Code node to render the current condition. Calendar event keys (e.g. `swimming`, `bike`) must match Google Calendar event titles exactly.
+
+### 3b. Clothes Library node (Code)
+
+No inputs. Returns a flat map of `{ name: svgString }` for all 16 clothing SVGs.
+
+`assets/img/clothes/*.svg` is the source of truth. The build script generates the paste-ready JS:
+
+```
+/usr/bin/ruby scripts/build_clothes_library.rb
+```
+
+Output: `doc/dashboard/clothes_library.js` — paste its contents into this Code node.
+
+Keys returned: `hat`, `top`, `bottom`, `feet` (neutral), `cold-hat`, `cold-top`, `cold-bottom`, `cold-feet`,
+`hot-hat`, `hot-top`, `hot-bottom`, `hot-feet`, `rain-hat`, `rain-top`, `rain-bottom`, `rain-feet`.
+
+The Dashboard Code node reads this library and selects 4 SVGs based on temperature and rain detection.
 
 ### 4. Calendar HTTP Request nodes (×4)
 
@@ -186,7 +204,7 @@ curl -X POST https://square-beetle-87753.upstash.io/hset/invader:designs/mysprit
 
 ### 10. Merge node
 - Mode: `Append`
-- Inputs: all 4 Calendar nodes + Icon Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Upstash HGET Invader + Content Item (11 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Clothes Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Upstash HGET Invader + Content Item (12 total)
 - Ensures all branches have executed before Dashboard Code runs
 - **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
@@ -324,7 +342,49 @@ try {
   if (raw) invader = buildInvaderSvg(raw);
 } catch (e) {}
 
-return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader } }];
+// ─── Clothes selection ───────────────────────────────────────────────
+const clothesLib = $('Clothes Library').first().json;
+
+const feelsLike = night_mode ? weather.tomorrow_max_feels_like : weather.max_feels_like;
+const dailyCode = night_mode ? weather.tomorrow_daily_code     : weather.daily_code;
+
+// Drizzle 51-55, Rain 61-65, Snow 71-77, Showers 80-82
+const isRainy = dailyCode !== null &&
+  ((dailyCode >= 51 && dailyCode <= 55) ||
+   (dailyCode >= 61 && dailyCode <= 65) ||
+   (dailyCode >= 71 && dailyCode <= 77) ||
+   (dailyCode >= 80 && dailyCode <= 82));
+
+function tempVariant(temp, coldBelow, hotAbove) {
+  if (temp === null || temp === undefined) return '';
+  if (temp < coldBelow) return 'cold';
+  if (temp > hotAbove)  return 'hot';
+  return '';
+}
+
+let clothes;
+if (isRainy) {
+  clothes = {
+    hat:    clothesLib['rain-hat'],
+    top:    clothesLib['rain-top'],
+    bottom: clothesLib['rain-bottom'],
+    feet:   clothesLib['rain-feet'],
+  };
+} else {
+  const hv = tempVariant(feelsLike,  8, 28);
+  const tv = tempVariant(feelsLike, 12, 25);
+  const bv = tempVariant(feelsLike, 10, 27);
+  const fv = tempVariant(feelsLike, 10, 24);
+  clothes = {
+    hat:    clothesLib[hv ? `${hv}-hat`    : 'hat'],
+    top:    clothesLib[tv ? `${tv}-top`    : 'top'],
+    bottom: clothesLib[bv ? `${bv}-bottom` : 'bottom'],
+    feet:   clothesLib[fv ? `${fv}-feet`   : 'feet'],
+  };
+}
+// ─────────────────────────────────────────────────────────────────────
+
+return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader, clothes } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
@@ -350,7 +410,13 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
   "random": 317,
   "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
   "night_mode": true,
-  "invader": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\" viewBox=\"0 0 96 96\">...</svg>"
+  "invader": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\" viewBox=\"0 0 96 96\">...</svg>",
+  "clothes": {
+    "hat":    "<svg...>",
+    "top":    "<svg...>",
+    "bottom": "<svg...>",
+    "feet":   "<svg...>"
+  }
 }
 ```
 
@@ -382,6 +448,10 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
 | Content text | `{{ source.content.text }}` |
 | Content answer | `{{ source.content.answer }}` — present only for quizzes |
 | Pixel art sprite | `{{ source.invader }}` — inline SVG string, or `null` if hash is empty |
+| Selected hat SVG    | `{{ source.clothes.hat }}`    |
+| Selected top SVG    | `{{ source.clothes.top }}`    |
+| Selected bottom SVG | `{{ source.clothes.bottom }}` |
+| Selected feet SVG   | `{{ source.clothes.feet }}`   |
 
 ## Day/Night Mode
 
@@ -439,6 +509,24 @@ All external HTTP nodes have **"Continue on error"** enabled. Dashboard Code che
 
 - Weather: `weatherRaw.error || !weatherRaw.current` → returns null fields → Liquid shows `--°C`
 - Calendar: `raw.error || !raw.items` → returns `[]` → Liquid shows `—` placeholder
+
+## Adding/Updating Clothes Icons
+
+1. Add or replace the SVG file in `assets/img/clothes/` (filename must match one of the 16 expected names)
+2. Run `/usr/bin/ruby scripts/build_clothes_library.rb`
+3. Paste the updated `doc/dashboard/clothes_library.js` into the n8n `Clothes Library` Code node
+4. No other changes needed — Dashboard Code selects SVGs by key name at runtime
+
+**Temperature thresholds (Paris, apparent temperature max):**
+
+| Position | Cold (°C) | Hot (°C) |
+|----------|-----------|----------|
+| Hat      | < 8       | > 28     |
+| Top      | < 12      | > 25     |
+| Bottom   | < 10      | > 27     |
+| Feet     | < 10      | > 24     |
+
+Rain/snow (WMO codes 51–82) overrides temperature: the entire rain set is shown regardless of temp.
 
 ## Adding More Icons
 

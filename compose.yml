@@ -132,7 +132,7 @@ services:
       - n8n-data:/home/node/.n8n
     environment:
       - N8N_HOST=0.0.0.0
-      - WEBHOOK_URL=http://192.168.100.34:5678
+      - WEBHOOK_URL=http://192.168.1.91:5678
     restart: unless-stopped
 
 volumes:

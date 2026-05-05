@@ -123,6 +123,15 @@ Once launched, open `http://localhost:2300` in your browser then click the _Regi
 
 ⚠️ This script is not idempotent which means you can't run it more than once since your database credentials will be different each time. This is only meant for getting up and running quickly to explore the feature set, not permanent use. For permanent use, see the link:doc/docker.adoc[Docker] documentation.
 
+=== Docker Compose URLs
+
+When running `docker compose up`, the main services are available at:
+
+* *Terminus*: `http://localhost:2300` by default, or the port configured by `HANAMI_PORT` in `.env`.
+* *n8n*: `http://localhost:5678`.
+
+Run `docker compose ps` to confirm the currently published ports. Device-facing URLs are controlled by `API_URI` for Terminus and `WEBHOOK_URL` for n8n.
+
 == Setup
 
 To set up this project for local development, run:

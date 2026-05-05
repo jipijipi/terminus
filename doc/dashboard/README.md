@@ -90,15 +90,19 @@ Counter is stored in Upstash Redis. Increment/decrement via the Counter Up n8n w
 
 ### family (bottom-center)
 
-One row per family member with their calendar events for the day (or tomorrow in night mode) shown as SVG icons. Unknown event titles fall back to plain text.
+One row per family member with their calendar events for the day (or tomorrow in night mode) shown as SVG icons. Unknown event titles fall back to plain text. Below the member rows, a fixed counter shows Ulysse's book tally and the net amount owed.
 
 | Variable | Description |
 |---|---|
 | `source.family[].member` | Member name |
 | `source.family[].icons[].svg` | Event icon SVG string (if matched) |
 | `source.family[].icons[].text` | Event title fallback (if no icon match) |
+| `source.ulysseBooks` | Number of books Ulysse has read |
+| `source.ulysseOwed` | Net amount owed in € (`books × 1.1 − advance`); negative = advance paid |
 
 Calendar icons are matched case-insensitively against `assets/icons/*.svg` filenames. Add icons with `/usr/bin/ruby scripts/build_icon_library.rb`.
+
+Book count stored in Upstash key `ulysseBooks` (int). Advances paid in `ulysseAdvance` (float). Increment via the Books Up n8n workflow; record payments via Books Advance workflow.
 
 ### content (bottom-right)
 

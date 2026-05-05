@@ -14,6 +14,8 @@ Webhook → Clothes Library ─────────────────�
 Webhook → Weather Request ─────────────────┤
 Webhook → Upstash GET (bonusPoints) ───────┤
 Webhook → Upstash GET Bed ─────────────────┤
+Webhook → Upstash GET Books ───────────────┤
+Webhook → Upstash GET Advance ─────────────┤
 Webhook → Upstash HKEYS Invader ──► Invader Key ──► Upstash HGET Invader ──┤
 Webhook → Content Length ──► Content Index ──► Content Item ──┴──► Merge ──► Dashboard Code
 ```
@@ -142,7 +144,31 @@ curl -X POST https://YOUR_UPSTASH_HOST/set/bed/%7B%22owner%22%3A%22mom%22%2C%22a
 
 Or set it directly in the Upstash console Data Browser: key `bed`, value `{"owner":"mom","anchor":"2026-04-27"}`.
 
-### 8. Content nodes (×3)
+### 8. Upstash GET Books node (HTTP Request)
+
+Wired in parallel with the bonusPoints node. Enable **"Continue on error"**.
+
+- Method: `GET`
+- URL: `https://YOUR_UPSTASH_HOST/get/ulysseBooks`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": "3" }` — coerced to int in Dashboard Code
+
+### 8b. Upstash GET Advance node (HTTP Request)
+
+Wired in parallel. Enable **"Continue on error"**.
+
+- Method: `GET`
+- URL: `https://YOUR_UPSTASH_HOST/get/ulysseAdvance`
+- Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+- Returns: `{ "result": "2.2" }` — coerced to float in Dashboard Code
+
+**One-time Redis setup:**
+```bash
+curl -X POST https://YOUR_UPSTASH_HOST/set/ulysseBooks/0 -H "Authorization: Bearer YOUR_UPSTASH_TOKEN"
+curl -X POST https://YOUR_UPSTASH_HOST/set/ulysseAdvance/0 -H "Authorization: Bearer YOUR_UPSTASH_TOKEN"
+```
+
+### 9. Content nodes (×3)
 
 Fetch a random item from the `content` Redis list. Chain: Content Length → Content Index → Content Item.
 
@@ -165,7 +191,7 @@ return { idx };
 - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
 - Returns: `{ "result": "{\"type\":\"joke\",\"text\":\"...\"}" }` — result is a JSON string
 
-### 9. Invader nodes (×3)
+### 10. Invader nodes (×3)
 
 Fetch a random sprite from the `invader:designs` hash. Chain: Upstash HKEYS Invader → Invader Key → Upstash HGET Invader.
 
@@ -205,13 +231,13 @@ curl -X POST https://square-beetle-87753.upstash.io/hset/invader:designs/mysprit
   -d '["{\"w\":8,\"h\":8,\"pixels\":\"0110011010011001011001101001100101100110100110010110011010011001\"}"]'
 ```
 
-### 10. Merge node
+### 11. Merge node
 - Mode: `Append`
-- Inputs: all 4 Calendar nodes + Icon Library + Clothes Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Upstash HGET Invader + Content Item (12 total)
+- Inputs: all 4 Calendar nodes + Icon Library + Clothes Library + Weather Request + Upstash GET (bonusPoints) + Upstash GET Bed + Upstash GET Books + Upstash GET Advance + Upstash HGET Invader + Content Item (14 total)
 - Ensures all branches have executed before Dashboard Code runs
 - **Do not use "Combine by position"** — it tries to pair items across branches and fails when branch item counts differ. Dashboard Code references each upstream node by name directly, so Append is correct.
 
-### 11. Dashboard Code node (Code)
+### 12. Dashboard Code node (Code)
 
 - **Mode: `Run once for all items`** — required because Merge Final outputs one item per branch. In per-item mode n8n tries to pair each item back to its source node and fails. In all-items mode the node runs once and references upstream nodes directly by name with `.first().json`.
 
@@ -301,6 +327,11 @@ const family = [
 // Bons Points — read from Upstash GET node
 const upstashRaw = $('Upstash GET').first().json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
+
+// Ulysse books counter — books read and net amount owed (1.1€/book minus advances)
+const ulysseBooks   = parseInt($('Upstash GET Books').first().json?.result ?? 0, 10) || 0;
+const ulysseAdvance = parseFloat($('Upstash GET Advance').first().json?.result ?? 0) || 0;
+const ulysseOwed    = Math.round((ulysseBooks * 1.1 - ulysseAdvance) * 100) / 100;
 
 // Bed alternation — always uses today's real date, regardless of night_mode
 const pad = n => String(n).padStart(2, '0');
@@ -392,7 +423,7 @@ if (isRainy) {
 }
 // ─────────────────────────────────────────────────────────────────────
 
-return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader, clothes, paris_time } }];
+return [{ json: { weather, family, bonusPoints, ulysseBooks, ulysseOwed, bed, random, content, night_mode, invader, clothes, paris_time } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
@@ -414,6 +445,8 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
     { "member": "Papa",   "icons": [] }
   ],
   "bonusPoints": 4,
+  "ulysseBooks": 3,
+  "ulysseOwed": 1.1,
   "bed": "mom",
   "random": 317,
   "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
@@ -452,6 +485,8 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
 | Member name | `{{ m.member }}` |
 | Member icons | `{% for icon in m.icons %}{{ icon.svg }}{% endfor %}` |
 | Bons Points count | `{{ source.bonusPoints }}` |
+| Books read (Ulysse) | `{{ source.ulysseBooks }}` — integer count |
+| Amount owed (Ulysse) | `{{ source.ulysseOwed }}` — float, negative means advance paid |
 | Task owner | `{{ source.bed }}` — `"mom"` or `"dad"` |
 | Random 0–999 | `{{ source.random }}` — derive with `modulo: N` |
 | Content type | `{{ source.content.type }}` — `joke`, `fact`, or `quiz` |
@@ -676,6 +711,78 @@ Schedule Trigger (Monday 00:00, Europe/Paris) → Upstash SET (HTTP Request)
   - Method: `POST`
   - URL: `https://YOUR_UPSTASH_HOST/set/bonusPoints/0`
   - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+
+## Ulysse Books Counter
+
+Two separate n8n workflows to track books Ulysse has read and advances paid. State lives in Upstash Redis (`ulysseBooks` integer, `ulysseAdvance` float). The dashboard displays book count and net amount owed (`books × 1.1 − advance`).
+
+### Workflow: Books Up
+
+```
+Webhook (GET /webhook/books-up?delta=1)
+  → Upstash INCRBY ulysseBooks (HTTP Request)
+  → Upstash GET ulysseBooks (HTTP Request)
+  → Respond to Webhook
+```
+
+- **Webhook**: GET, path `books-up`, response mode `Using Respond to Webhook node`
+
+- **Upstash INCRBY** (HTTP Request, "Continue on error"):
+  - Method: `POST`
+  - URL: `https://YOUR_UPSTASH_HOST/incrby/ulysseBooks/{{ $json.query.delta ?? 1 }}`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+  - Use `?delta=-1` to correct a mistake
+
+- **Upstash GET** (HTTP Request):
+  - Method: `GET`
+  - URL: `https://YOUR_UPSTASH_HOST/get/ulysseBooks`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+
+- **Respond to Webhook**:
+  - Body: `Livres Ulysse: {{ $json.result }}`
+  - MIME type: `text/plain`
+
+**Phone bookmark:** `https://YOUR_N8N_HOST/webhook/books-up?delta=1`
+
+### Workflow: Books Advance
+
+Records a payment made to Ulysse. Adds `amount` to the stored advance total so `ulysseOwed` decreases on the dashboard.
+
+```
+Webhook (GET /webhook/books-advance?amount=5.5)
+  → Upstash GET Advance (HTTP Request)
+  → Code (add amount to current advance)
+  → Upstash SET Advance (HTTP Request)
+  → Respond to Webhook
+```
+
+- **Webhook**: GET, path `books-advance`, response mode `Using Respond to Webhook node`
+
+- **Upstash GET Advance** (HTTP Request):
+  - Method: `GET`
+  - URL: `https://YOUR_UPSTASH_HOST/get/ulysseAdvance`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+
+- **Code node** (`Run once for all items`):
+```js
+const current = parseFloat($('Upstash GET Advance').first().json.result) || 0;
+const delta   = parseFloat($('Webhook').first().json.query.amount) || 0;
+const newVal  = Math.round((current + delta) * 100) / 100;
+return [{ json: { newVal } }];
+```
+
+- **Upstash SET Advance** (HTTP Request):
+  - Method: `POST`
+  - URL (expression): `https://YOUR_UPSTASH_HOST/set/ulysseAdvance/{{ $json.newVal }}`
+  - Headers: `Authorization: Bearer YOUR_UPSTASH_TOKEN`
+
+- **Respond to Webhook**:
+  - Body: `Avance Ulysse: {{ $json.newVal }}€`
+  - MIME type: `text/plain`
+
+**Phone bookmark:** `https://YOUR_N8N_HOST/webhook/books-advance?amount=5.5`
+
+To reset the advance to zero after settling: `?amount=0` won't work — instead SET directly via Upstash console or use `?amount=-X` to subtract.
 
 ## Infrastructure & Free Tier Summary
 

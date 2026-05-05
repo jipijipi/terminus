@@ -135,6 +135,33 @@ Add items via `curl` to Upstash `rpush/content`. See `n8n_workflow.md` for forma
 
 Use `/usr/bin/ruby` (system Ruby) rather than `ruby` — the project's `.ruby-version` targets the app runtime which rbenv may not have installed.
 
+## iPhone Shortcuts / Phone Bookmarks
+
+URLs to bookmark on your phone (or use as iPhone Shortcuts → Open URLs):
+
+### Bons Points
+
+| Action | URL |
+|---|---|
+| +1 point | `https://YOUR_N8N_HOST/webhook/counter-up?delta=1` |
+| −1 point (correction) | `https://YOUR_N8N_HOST/webhook/counter-up?delta=-1` |
+
+### Ulysse — Books
+
+| Action | URL |
+|---|---|
+| +1 book | `https://YOUR_N8N_HOST/webhook/books-up?delta=1` |
+| −1 book (correction) | `https://YOUR_N8N_HOST/webhook/books-up?delta=-1` |
+| Record a payment (e.g. 5.50€) | `https://YOUR_N8N_HOST/webhook/books-advance?amount=5.5` |
+
+The response is plain text confirming the new value.
+
+### Bed Toggle
+
+| Action | URL |
+|---|---|
+| Flip today's bed owner | `https://YOUR_N8N_HOST/webhook/bed-toggle` |
+
 ## Notes
 
 - Terminus HTTP client does not follow redirects — use n8n as a proxy for any service that redirects

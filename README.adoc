@@ -132,6 +132,10 @@ When running `docker compose up`, the main services are available at:
 
 Run `docker compose ps` to confirm the currently published ports. Device-facing URLs are controlled by `API_URI` for Terminus and `WEBHOOK_URL` for n8n.
 
+=== OVH VPS Deployment
+
+For the personal OVH VPS setup with Terminus, n8n, and HTTPS, see link:doc/ovh_vps_terminus_n8n.md[OVH VPS guide for Terminus and n8n].
+
 == Setup
 
 To set up this project for local development, run:

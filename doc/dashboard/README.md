@@ -137,16 +137,16 @@ Use `/usr/bin/ruby` (system Ruby) rather than `ruby` — the project's `.ruby-ve
 
 ## iPhone Shortcuts / Phone Bookmarks
 
-URLs to bookmark on your phone (or use as iPhone Shortcuts → Open URLs):
+URLs to bookmark on your phone (or use as iPhone Shortcuts → Open URLs). Full n8n node specs for each workflow are in `n8n_workflow.md`.
 
-### Bons Points
+### Bons Points (`n8n_workflow.md` → *Bons Points Counter*)
 
 | Action | URL |
 |---|---|
 | +1 point | `https://YOUR_N8N_HOST/webhook/counter-up?delta=1` |
 | −1 point (correction) | `https://YOUR_N8N_HOST/webhook/counter-up?delta=-1` |
 
-### Ulysse — Books
+### Ulysse — Books (`n8n_workflow.md` → *Ulysse Books Counter*)
 
 | Action | URL |
 |---|---|
@@ -156,7 +156,7 @@ URLs to bookmark on your phone (or use as iPhone Shortcuts → Open URLs):
 
 The response is plain text confirming the new value.
 
-### Bed Toggle
+### Bed Toggle (`n8n_workflow.md` → *Task Toggle*)
 
 | Action | URL |
 |---|---|

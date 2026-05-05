@@ -5,6 +5,12 @@
   LAYOUT: edit grid-template-areas to swap zones. Available: date, weather, family, bons-points, status, extra.
 {% endcomment %}
 
+{% comment %}
+  Terminus 0.55+ exchanges expose the first exchange response as source_1.
+  Older URL-based extensions exposed a single response as source.
+{% endcomment %}
+{% assign source = source_1 | default: source %}
+
 {% assign night_mode = source.night_mode %}
 
 {% assign wheel_angle = source.random | modulo: 8 | times: 45 %}

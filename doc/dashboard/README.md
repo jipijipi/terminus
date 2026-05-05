@@ -5,8 +5,9 @@ Personal TRMNL dashboard — 2×3 grid of 240×240px zones on an 800×480 displa
 ## Extension Configuration
 
 - **Kind**: `poll`
-- **URIs**: one single URI → `http://<host>:5678/webhook/dashboard`
-- Since there is only one URI, Terminus exposes data as `source` (not `source_1`, `source_2`)
+- **Exchange**: one single GET exchange → `https://n8n.goodideed.com/webhook/dashboard`
+- Since there is only one exchange, Terminus 0.55+ exposes data as `source_1`
+- `template.html` aliases `source_1` back to `source` so the rest of the Liquid template stays readable
 
 All data — weather, calendar, bonus points, content — flows through n8n. See `n8n_workflow.md` for setup.
 
@@ -34,7 +35,7 @@ Edit `grid-template-areas` in the template to reorder zones.
 | Day | 00:00–16:59 | White bg | Today | Today |
 | Night | 17:00–23:59 | Inverted (black bg) | Tomorrow | Tomorrow |
 
-`night_mode` is computed in the n8n Date Prep node and passed through as `source.night_mode`.
+`night_mode` is computed in the n8n Date Prep node and passed through as `source_1.night_mode`. The template aliases `source_1` to `source`.
 
 ## Zones
 
@@ -43,7 +44,7 @@ Edit `grid-template-areas` in the template to reorder zones.
 Displays day of week and date in French, current Paris time, and today's bed owner (Maman/Papa) with a moon icon. Shows a random pixel-art invader sprite in the middle when available.
 
 - Day/month names computed via Liquid lookup arrays (no server locale dependency)
-- Time sourced from n8n (`source.paris_time`) — always Europe/Paris, unaffected by server timezone
+- Time sourced from n8n (`source_1.paris_time`) — always Europe/Paris, unaffected by server timezone
 - Bed owner always reflects today regardless of night mode, alternates every 2 days from a stored anchor date in Upstash Redis
 
 ### weather (top-center)
@@ -165,4 +166,5 @@ The response is plain text confirming the new value.
 ## Notes
 
 - Terminus HTTP client does not follow redirects — use n8n as a proxy for any service that redirects
-- Fly.io migration: update extension URI to public n8n URL, update `WEBHOOK_URL` in n8n env
+- Terminus 0.55+ migration: run `bin/exchangize` once, then use `source_1` for the first exchange response
+- VPS migration: update exchange URLs to public n8n URL, update `WEBHOOK_URL` in n8n env

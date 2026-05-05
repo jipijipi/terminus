@@ -299,10 +299,15 @@ const family = [
 const upstashRaw = $('Upstash GET').first().json;
 const bonusPoints = parseInt(upstashRaw?.result ?? 0, 10) || 0;
 
-// Bed alternation — derives today's owner from anchor date + stored owner
-const bedData = JSON.parse($('Upstash GET Bed').first().json.result);
-const dayDiff = Math.round((new Date(targetDateStr) - new Date(bedData.anchor)) / 86400000);
-const bed = dayDiff % 2 === 0 ? bedData.owner : (bedData.owner === 'mom' ? 'dad' : 'mom');
+// Bed alternation — always uses today's real date, regardless of night_mode
+const pad = n => String(n).padStart(2, '0');
+const todayStr = (() => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; })();
+let bed = 'mom';
+try {
+  const bedData = JSON.parse($('Upstash GET Bed').first().json.result);
+  const dayDiff = Math.round((new Date(todayStr) - new Date(bedData.anchor)) / 86400000);
+  bed = dayDiff % 2 === 0 ? bedData.owner : (bedData.owner === 'mom' ? 'dad' : 'mom');
+} catch (e) {}
 
 // Generic random integer 0–999. Liquid derives all random features from it via modulo.
 const random = Math.floor(Math.random() * 1000);

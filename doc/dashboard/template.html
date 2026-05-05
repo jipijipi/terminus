@@ -46,7 +46,7 @@
       <p style="font-size: 28px; font-weight: bold; margin: 0 0 4px; line-height: 34px;">
         {{ day_num }} {{ fr_month }}
       </p>
-      <p style="font-size: 14px; margin: 0; line-height: 16px;">{{ "now" | date: "%H:%M" }}</p>
+      <p style="font-size: 14px; margin: 0; line-height: 16px;">{{ source.paris_time }}</p>
     </div>
     {% if source.invader %}
     <div style="display: flex; justify-content: center; align-items: center;">

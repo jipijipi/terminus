@@ -40,6 +40,8 @@ const parisHour = parseInt(
 );
 const night_mode = parisHour >= 17;
 
+const paris_time = now.toLocaleString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false });
+
 const target = new Date(now);
 if (night_mode) target.setDate(target.getDate() + 1);
 const next = new Date(target);
@@ -49,6 +51,7 @@ return [{ json: {
   timeMin: `${ymd(target)}T00:00:00Z`,
   timeMax: `${ymd(next)}T00:00:00Z`,
   night_mode,
+  paris_time,
 } }];
 ```
 
@@ -237,7 +240,7 @@ const WMO_LABEL = {
   95: 'Storm',   96: 'Storm',   99: 'Storm',
 };
 
-const { night_mode, timeMin: targetDate } = $('Date Prep').first().json;
+const { night_mode, timeMin: targetDate, paris_time } = $('Date Prep').first().json;
 
 // Weather — defensive against API errors and network failures
 const weatherRaw = $('Weather Request').first().json;
@@ -389,7 +392,7 @@ if (isRainy) {
 }
 // ─────────────────────────────────────────────────────────────────────
 
-return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader, clothes } }];
+return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode, invader, clothes, paris_time } }];
 ```
 
 `icons: []` means no events → Liquid renders `—` placeholder.
@@ -415,6 +418,7 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
   "random": 317,
   "content": { "type": "quiz", "text": "Capitale de l'Australie ?", "answer": "Canberra" },
   "night_mode": true,
+  "paris_time": "21:34",
   "invader": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\" viewBox=\"0 0 96 96\">...</svg>",
   "clothes": {
     "hat":    "<svg...>",
@@ -429,7 +433,8 @@ return [{ json: { weather, family, bonusPoints, bed, random, content, night_mode
 
 | Data | Variable |
 |---|---|
-| Night mode flag | `{{ source.night_mode }}` — `true` from 05:00, `false` 00:00–04:59 |
+| Night mode flag | `{{ source.night_mode }}` — `true` from 17:00, `false` 00:00–16:59 |
+| Current Paris time | `{{ source.paris_time }}` — `"HH:MM"` string, Europe/Paris timezone |
 | Current temp | `{{ source.weather.temp }}` |
 | Weather code | `{{ source.weather.code }}` |
 | Max temp today | `{{ source.weather.max_temp }}` |

@@ -40,10 +40,11 @@ Edit `grid-template-areas` in the template to reorder zones.
 
 ### date (top-left)
 
-Displays day of week and date in French, current time, and tonight's bed owner (Maman/Papa) with a moon icon. Shows a random pixel-art invader sprite in the middle when available.
+Displays day of week and date in French, current Paris time, and today's bed owner (Maman/Papa) with a moon icon. Shows a random pixel-art invader sprite in the middle when available.
 
 - Day/month names computed via Liquid lookup arrays (no server locale dependency)
-- Bed owner alternates every 2 days from a stored anchor date in Upstash Redis
+- Time sourced from n8n (`source.paris_time`) — always Europe/Paris, unaffected by server timezone
+- Bed owner always reflects today regardless of night mode, alternates every 2 days from a stored anchor date in Upstash Redis
 
 ### weather (top-center)
 
@@ -77,7 +78,7 @@ Split zone: 56px clothing column on the left, spinning wheel on the right.
 | Bottom | < 10°C | > 27°C |
 | Feet | < 10°C | > 24°C |
 
-Source SVGs: `assets/img/clothes/*.svg`. Build with `ruby scripts/build_clothes_library.rb`.
+Source SVGs: `assets/img/clothes/*.svg`. Build with `/usr/bin/ruby scripts/build_clothes_library.rb`.
 
 **Wheel** — decorative spinner. Angle = `source.random % 8 * 45°`.
 
@@ -97,7 +98,7 @@ One row per family member with their calendar events for the day (or tomorrow in
 | `source.family[].icons[].svg` | Event icon SVG string (if matched) |
 | `source.family[].icons[].text` | Event title fallback (if no icon match) |
 
-Calendar icons are matched case-insensitively against `assets/icons/*.svg` filenames. Add icons with `ruby scripts/build_icon_library.rb`.
+Calendar icons are matched case-insensitively against `assets/icons/*.svg` filenames. Add icons with `/usr/bin/ruby scripts/build_icon_library.rb`.
 
 ### content (bottom-right)
 
@@ -124,9 +125,11 @@ Add items via `curl` to Upstash `rpush/content`. See `n8n_workflow.md` for forma
 ## Build Scripts
 
 ```bash
-ruby scripts/build_icon_library.rb    # regenerate icon_library.js from assets/icons/*.svg
-ruby scripts/build_clothes_library.rb # regenerate clothes_library.js from assets/img/clothes/*.svg
+/usr/bin/ruby scripts/build_icon_library.rb    # regenerate icon_library.js from assets/icons/*.svg
+/usr/bin/ruby scripts/build_clothes_library.rb # regenerate clothes_library.js from assets/img/clothes/*.svg
 ```
+
+Use `/usr/bin/ruby` (system Ruby) rather than `ruby` — the project's `.ruby-version` targets the app runtime which rbenv may not have installed.
 
 ## Notes
 

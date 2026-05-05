@@ -19,7 +19,9 @@
       "Bash(grep -E \"\\\\.\\(css|html|md\\)$\")",
       "Bash(RBENV_VERSION=system ruby *)",
       "Bash(curl *)",
-      "Bash(python3 -c 'import urllib.parse, sys; print\\(urllib.parse.quote\\(sys.argv[1]\\)\\)' '{\"owner\":\"mom\",\"anchor\":\"2026-04-27\"}')"
+      "Bash(python3 -c 'import urllib.parse, sys; print\\(urllib.parse.quote\\(sys.argv[1]\\)\\)' '{\"owner\":\"mom\",\"anchor\":\"2026-04-27\"}')",
+      "Bash(rbenv versions *)",
+      "Read(//Users/jpl/.rbenv/versions/**)"
     ]
   }
 }

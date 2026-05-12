@@ -1,6 +1,6 @@
 ## Backlog
 
-- VPS deploy
-- Intense refresh
-- Firmware update
+- Firmware update?
+- More jokes
+- apple weather
 
